@@ -1,144 +1,167 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import Image from "next/image"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import { companyData } from "@lib/company-data"
 
-const serviceImages = [
-  "/images/homepage/imgi_115_h1sl1.jpg",
-  "/images/homepage/imgi_116_h1sl2.jpg",
-]
+/**
+ * Our Services Section
+ * Accordion-style services display with image on left
+ */
 
-const SLIDE_DURATION = 10000
+export default function OurServices() {
+  const [openIndex, setOpenIndex] = useState<number>(0)
 
-const OurServices = () => {
-  const [currentSlide, setCurrentSlide] = useState(0)
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % serviceImages.length)
-    }, SLIDE_DURATION)
-    return () => clearInterval(interval)
-  }, [])
+  const toggleAccordion = (index: number) => {
+    setOpenIndex(openIndex === index ? -1 : index)
+  }
 
   return (
-    <div className="px-4 md:px-6 lg:px-8 py-4 md:py-6">
-      {/* Main Services Card - Black */}
-      <div className="relative w-full h-[70vh] md:h-[80vh] bg-[#1a1a1a] rounded-2xl overflow-hidden shadow-xl">
-        <div className="absolute inset-0 grid grid-cols-1 lg:grid-cols-2">
-          {/* Left Image Slideshow */}
-          <div className="relative hidden lg:block order-1">
-            <div className="absolute inset-4 lg:inset-8 rounded-xl overflow-hidden shadow-lg">
-              {serviceImages.map((image, index) => (
-                <div
-                  key={image}
-                  className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-                    index === currentSlide ? "opacity-100" : "opacity-0"
-                  }`}
+    <section className="py-16 md:py-24 px-4 md:px-8 lg:px-16">
+      <div className="max-w-7xl mx-auto">
+        {/* Section Header */}
+        <div className="text-center mb-12 md:mb-16">
+          <span className="inline-block px-4 py-1.5 bg-[#F16D34]/10 text-[#F16D34] text-sm font-medium rounded-full mb-4">
+            What We Offer
+          </span>
+          <h2
+            className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900"
+            style={{ fontFamily: "Tanker, sans-serif" }}
+          >
+            Our Services
+          </h2>
+        </div>
+
+        {/* Content Grid - Image Left, Accordion Right */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start">
+          {/* Left Side - Image */}
+          <div className="relative aspect-[4/3] lg:aspect-square rounded-3xl overflow-hidden">
+            <Image
+              src="/images/homepage/imgi_115_h1sl1.jpg"
+              alt="Sixthgear Services"
+              fill
+              className="object-cover"
+            />
+            {/* Overlay gradient */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+            {/* Badge */}
+            <div className="absolute bottom-6 left-6 right-6">
+              <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-4">
+                <p
+                  className="text-gray-800 text-sm md:text-base"
+                  style={{ fontFamily: "Inter Display, sans-serif" }}
                 >
-                  <Image
-                    src={image}
-                    alt={`Services ${index + 1}`}
-                    fill
-                    className="object-cover"
-                    sizes="50vw"
-                  />
-                </div>
-              ))}
-              {/* Slide Indicators */}
-              <div className="absolute bottom-4 left-4 flex gap-2 z-10">
-                {serviceImages.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentSlide(index)}
-                    className={`h-1.5 rounded-full transition-all duration-500 ${
-                      index === currentSlide
-                        ? "w-6 bg-[#F16D34]"
-                        : "w-1.5 bg-white/60 hover:bg-white"
-                    }`}
-                    aria-label={`Go to slide ${index + 1}`}
-                  />
-                ))}
+                  Professional motorcycle services with passion and expertise
+                </p>
               </div>
             </div>
           </div>
 
-          {/* Right Content */}
-          <div className="flex flex-col justify-between p-8 md:p-12 lg:p-16 z-10 order-2">
-            {/* Title */}
-            <h2
-              className="text-[#F16D34] text-[12vw] md:text-[8vw] lg:text-[6vw] leading-[0.9] font-bold uppercase tracking-tight"
-              style={{ fontFamily: "Tanker, sans-serif" }}
-            >
-              Our Services
-            </h2>
-
-            {/* Bottom Section - Button and Description */}
-            <div className="flex flex-col gap-6">
-              {/* CTA Button */}
-              <LocalizedClientLink
-                href="/services"
-                className="inline-flex items-center gap-3 px-5 py-3 bg-[#F16D34] text-white text-sm font-medium rounded-lg hover:bg-[#d85a25] transition-all duration-300 group w-fit"
-              >
-                <span style={{ fontFamily: "Inter Display, sans-serif" }}>
-                  View all services
-                </span>
-                <span className="w-7 h-7 bg-white rounded-full flex items-center justify-center group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-300">
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="#F16D34"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M7 17L17 7" />
-                    <path d="M7 7h10v10" />
-                  </svg>
-                </span>
-              </LocalizedClientLink>
-
-              {/* Description */}
-              <p
-                className="text-white/90 text-base md:text-lg lg:text-xl leading-relaxed max-w-md font-medium"
-                style={{
-                  fontFamily: "Inter Display, sans-serif",
-                  fontWeight: 500,
-                }}
-              >
-                Professional motorcycle care from routine maintenance to
-                complete customization. Your ride deserves the best.
-              </p>
-            </div>
-          </div>
-
-          {/* Mobile Image */}
-          <div className="relative lg:hidden h-48 md:h-64 order-1">
-            <div className="absolute inset-4 rounded-xl overflow-hidden">
-              {serviceImages.map((image, index) => (
+          {/* Right Side - Accordion */}
+          <div className="flex flex-col">
+            <div className="space-y-3">
+              {companyData.servicesOffered.map((service, index) => (
                 <div
-                  key={image}
-                  className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-                    index === currentSlide ? "opacity-100" : "opacity-0"
+                  key={index}
+                  className={`border rounded-xl overflow-hidden transition-all duration-300 ${
+                    openIndex === index
+                      ? "border-[#F16D34] bg-[#F16D34]/5"
+                      : "border-gray-200 hover:border-gray-300"
                   }`}
                 >
-                  <Image
-                    src={image}
-                    alt={`Services ${index + 1}`}
-                    fill
-                    className="object-cover"
-                    sizes="100vw"
-                  />
+                  {/* Accordion Header */}
+                  <button
+                    onClick={() => toggleAccordion(index)}
+                    className="w-full flex items-center justify-between p-4 md:p-5 text-left"
+                  >
+                    <div className="flex items-center gap-4">
+                      <span
+                        className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold transition-colors ${
+                          openIndex === index
+                            ? "bg-[#F16D34] text-white"
+                            : "bg-gray-100 text-gray-600"
+                        }`}
+                      >
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
+                      <h3
+                        className={`font-semibold text-base md:text-lg transition-colors ${
+                          openIndex === index
+                            ? "text-[#F16D34]"
+                            : "text-gray-900"
+                        }`}
+                        style={{ fontFamily: "Inter Display, sans-serif" }}
+                      >
+                        {service.title}
+                      </h3>
+                    </div>
+                    {/* Arrow Icon */}
+                    <svg
+                      className={`w-5 h-5 transition-transform duration-300 ${
+                        openIndex === index
+                          ? "rotate-180 text-[#F16D34]"
+                          : "text-gray-400"
+                      }`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </button>
+
+                  {/* Accordion Content */}
+                  <div
+                    className={`overflow-hidden transition-all duration-300 ${
+                      openIndex === index ? "max-h-40" : "max-h-0"
+                    }`}
+                  >
+                    <div className="px-4 md:px-5 pb-4 md:pb-5 pl-16 md:pl-[4.5rem]">
+                      <p
+                        className="text-gray-600 text-sm md:text-base leading-relaxed"
+                        style={{ fontFamily: "Inter Display, sans-serif" }}
+                      >
+                        {service.description}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               ))}
+            </div>
+
+            {/* View All Services Button */}
+            <div className="mt-8">
+              <LocalizedClientLink
+                href="/services"
+                className="inline-flex items-center gap-3 bg-[#F16D34] hover:bg-[#ff7a3d] text-white font-semibold px-8 py-4 transition-all duration-300 group"
+              >
+                <span style={{ fontFamily: "Inter Display, sans-serif" }}>
+                  View All Services
+                </span>
+                <svg
+                  className="w-5 h-5 transform group-hover:translate-x-1 transition-transform"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 8l4 4m0 0l-4 4m4-4H3"
+                  />
+                </svg>
+              </LocalizedClientLink>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </section>
   )
 }
-
-export default OurServices

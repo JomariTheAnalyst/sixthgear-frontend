@@ -57,6 +57,11 @@ export const companyData = {
       description:
         "Transform your motorcycle with custom builds, performance upgrades, aesthetic modifications, and personalized accessories to match your style.",
     },
+    {
+      title: "Carwash and Detailing",
+      description:
+        "Transform your motorcycle with custom builds, performance upgrades, aesthetic modifications, and personalized accessories to match your style.",
+    },
   ],
 
   businessActivities: [
