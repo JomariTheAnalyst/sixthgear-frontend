@@ -33,17 +33,11 @@ export default function SatisfiedCustomers() {
         <div className="py-16 md:py-24">
           {/* Header */}
           <div className="text-center mb-12 md:mb-16 px-4">
-            <span
-              className="inline-block text-[#F16D34] text-sm uppercase tracking-[0.2em] mb-4"
-              style={{ fontFamily: "Inter Display, sans-serif" }}
-            >
-              Our Community
-            </span>
             <h2
-              className="text-3xl md:text-5xl lg:text-6xl text-white"
+              className="text-4xl md:text-6xl lg:text-7xl text-white"
               style={{ fontFamily: "Tanker, sans-serif" }}
             >
-              Satisfied Customers
+              Sixthgear Satisfied Customers
             </h2>
           </div>
 

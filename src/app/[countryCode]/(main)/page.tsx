@@ -7,6 +7,10 @@ import OurServices from "@modules/home/components/our-services"
 import ShopByCategories from "@modules/home/components/categories"
 import SatisfiedCustomers from "@modules/home/components/satisfied-customers"
 import CoffeeShowcase from "@modules/home/components/coffee-showcase"
+import ClientTestimonials from "@modules/home/components/client-testimonials"
+import CTABanner from "@modules/home/components/cta-banner"
+import Franchise from "@modules/home/components/franchise"
+import StoreLocation from "@modules/home/components/store-location"
 import {
   HotDealsSection,
   BestSellersSection,
@@ -88,6 +92,19 @@ export default async function Home(props: {
 
       {/* satisfied customers */}
       <SatisfiedCustomers />
+
+      {/* Client Testimonials */}
+      <ClientTestimonials />
+
+      {/* Franchise Section */}
+      <Franchise />
+
+
+      {/* CTA Banner - Opening Hours */}
+      <CTABanner />
+
+       {/* Store Location */}
+      <StoreLocation />
     </>
   )
 }
