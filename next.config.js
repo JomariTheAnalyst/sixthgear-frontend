@@ -46,6 +46,14 @@ const nextConfig = {
         protocol: "https",
         hostname: "pub-9b569f3b543c482099fac0e36dc1c5b2.r2.dev",
       },
+      {
+        protocol: "https",
+        hostname: "api.dicebear.com",
+      },
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+      },
       ...(S3_HOSTNAME && S3_PATHNAME
         ? [
             {

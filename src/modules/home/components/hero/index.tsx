@@ -1,290 +1,80 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
 import Image from "next/image"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
-const heroImages = [
-  "/images/homepage/imgi_115_h1sl1.jpg",
-  "/images/homepage/imgi_116_h1sl2.jpg",
-]
-
-const SLIDE_DURATION = 8000
-
 const Hero = () => {
-  const [currentSlide, setCurrentSlide] = useState(0)
-  const [progress, setProgress] = useState(0)
-  const [isPaused, setIsPaused] = useState(false)
-
-  const nextSlide = useCallback(() => {
-    setCurrentSlide((prev) => (prev + 1) % heroImages.length)
-    setProgress(0)
-  }, [])
-
-  const goToSlide = (index: number) => {
-    setCurrentSlide(index)
-    setProgress(0)
-  }
-
-  useEffect(() => {
-    if (isPaused) return
-
-    const progressInterval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          nextSlide()
-          return 0
-        }
-        return prev + 100 / (SLIDE_DURATION / 50)
-      })
-    }, 50)
-
-    return () => clearInterval(progressInterval)
-  }, [isPaused, nextSlide])
-
   return (
-    <div className="px-3 md:px-6 lg:px-8 py-3 md:py-6">
-      <div
-        className="relative w-full h-[85vh] md:h-[90vh] rounded-3xl overflow-hidden shadow-2xl"
-        onMouseEnter={() => setIsPaused(true)}
-        onMouseLeave={() => setIsPaused(false)}
-      >
-        {/* Background Images with Ken Burns Effect */}
-        {heroImages.map((image, index) => (
-          <div
-            key={image}
-            className={`absolute inset-0 transition-all duration-1000 ease-out ${
-              index === currentSlide
-                ? "opacity-100 scale-100"
-                : "opacity-0 scale-105"
-            }`}
-          >
-            <Image
-              src={image}
-              alt={`Hero background ${index + 1}`}
-              fill
-              priority={index === 0}
-              className={`object-cover transition-transform duration-[8000ms] ease-out ${
-                index === currentSlide ? "scale-110" : "scale-100"
-              }`}
-              sizes="100vw"
-            />
-          </div>
-        ))}
+    <div className="relative w-full h-screen bg-[#0a0a0a] overflow-hidden">
+      {/* Background Texture/Image */}
+      <div className="absolute inset-0 z-0">
+        <Image
+          src="/images/homepage/banner-img.png"
+          alt="Hero Background"
+          fill
+          className="object-cover opacity-60"
+          sizes="100vw"
+          priority
+        />
+        {/* Dark Gradient Overlay for better text visibility */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent" />
+      </div>
 
-        {/* Gradient Overlays */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-black/40" />
+      <div className="relative z-10 w-full h-full max-w-[1440px] mx-auto px-4 md:px-8 grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+        
+        {/* Left: Bike Visual with Gold Arch */}
+        <div className="relative w-full h-[50vh] lg:h-full flex items-center justify-center order-2 lg:order-1">
+            {/* Gold Arch */}
+            <div className="absolute left-0 lg:left-10 top-1/2 -translate-y-1/2 w-[280px] md:w-[400px] h-[400px] md:h-[600px] border-[16px] md:border-[24px] border-[#B88746] rounded-t-full z-0 opacity-80" />
+            
+            {/* Bike Image */}
+            <div className="relative z-10 w-[120%] md:w-[110%] max-w-[800px] translate-x-4 md:translate-x-12">
+                <Image
+                    src="/images/homepage/banner-bike-img.png"
+                    alt="Premium Motorcycle"
+                    width={800}
+                    height={600}
+                    className="object-contain drop-shadow-2xl animate-in slide-in-from-left duration-1000 fade-in"
+                    priority
+                />
+            </div>
+        </div>
 
-        {/* Decorative Elements */}
-        <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-black/50 to-transparent" />
-        <div className="absolute -top-20 -right-20 w-96 h-96 bg-[#F16D34]/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-20 -left-20 w-96 h-96 bg-[#F16D34]/5 rounded-full blur-3xl" />
-
-        {/* Main Content */}
-        <div className="absolute inset-0 flex flex-col justify-center items-center text-center px-6 z-10">
-          {/* Animated Badge */}
-          <div className="mb-6 md:mb-8 animate-fade-in-down">
-            <span className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20 text-white/90 text-xs md:text-sm font-medium tracking-wide">
-              <span className="w-2 h-2 bg-[#F16D34] rounded-full animate-pulse" />
-              Premium Motorcycle Gear
-            </span>
-          </div>
-
-          {/* Main Title */}
-          <h1
-            className="text-[#F16D34] text-[16vw] md:text-[12vw] lg:text-[10vw] leading-[0.85] font-bold uppercase tracking-tight"
-            style={{
-              fontFamily: "Tanker, sans-serif",
-              textShadow:
-                "0 4px 30px rgba(241, 109, 52, 0.3), 0 0 80px rgba(241, 109, 52, 0.1)",
-            }}
-          >
-            SIXTHGEAR
+        {/* Right: Content */}
+        <div className="flex flex-col items-start justify-center gap-6 lg:pl-12 order-1 lg:order-2 pt-20 lg:pt-0">
+          
+         
+          {/* Heading */}
+          <h1 className="text-4xl md:text-6xl lg:text-6xl font-bold leading-[1.1] text-transparent bg-clip-text bg-gradient-to-br from-[#B88746] via-[#F16D34] to-[#B88746] animate-in slide-in-from-right duration-1000 delay-100 fade-in fill-mode-forwards">
+             Best Bike Repair & Maintenance Services <br />
+            
           </h1>
 
-          {/* Subtitle */}
-          <p
-            className="text-white/90 text-sm md:text-lg lg:text-xl mt-4 md:mt-6 tracking-[0.3em] uppercase font-light"
-            style={{ fontFamily: "Inter Display, sans-serif" }}
-          >
-            Moto Supply & Café
-          </p>
-
-          {/* Tagline */}
-          <p className="text-white/60 text-xs md:text-sm mt-3 max-w-md tracking-wide">
-            Your one-stop destination for premium motorcycle gear, parts, and
-            great coffee
+          {/* Subtext */}
+          <p className="text-gray-400 text-lg md:text-xl max-w-lg leading-relaxed animate-in slide-in-from-right duration-1000 delay-200 fade-in fill-mode-forwards">
+             Professional two-wheeler servicing, repairs, detailing & performance upgrades. Trusted by riders for precision and care.
           </p>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 mt-10 md:mt-12">
+          <div className="flex flex-wrap items-center gap-4 mt-4 animate-in slide-in-from-right duration-1000 delay-300 fade-in fill-mode-forwards">
             <LocalizedClientLink
-              href="/store"
-              className="group relative inline-flex items-center justify-center overflow-hidden"
+              href="/about"
+              className="px-8 py-4 bg-gradient-to-r from-[#B88746] to-[#F16D34] text-white font-bold rounded-lg hover:shadow-[0_0_20px_rgba(241,109,52,0.5)] transition-all transform hover:-translate-y-1"
             >
-              <span className="relative z-10 px-8 py-4 md:px-12 md:py-5 bg-[#F16D34] text-white text-sm md:text-base font-semibold uppercase tracking-wider rounded-full transition-all duration-500 group-hover:bg-[#ff7a3d] group-hover:shadow-2xl group-hover:shadow-[#F16D34]/40 group-hover:scale-105 flex items-center gap-3">
-                Shop Now
-                <svg
-                  className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M17 8l4 4m0 0l-4 4m4-4H3"
-                  />
-                </svg>
-              </span>
+              More About Us
             </LocalizedClientLink>
-
+            
             <LocalizedClientLink
-              href="/collections"
-              className="group relative inline-flex items-center justify-center"
+              href="/services"
+              className="px-8 py-4 bg-transparent border-2 border-white/20 text-white font-bold rounded-lg hover:bg-white/10 hover:border-white transition-all"
             >
-              <span className="relative z-10 px-8 py-4 md:px-12 md:py-5 bg-white/10 backdrop-blur-sm text-white text-sm md:text-base font-semibold uppercase tracking-wider rounded-full border border-white/30 transition-all duration-500 group-hover:bg-white/20 group-hover:border-white/50 group-hover:scale-105">
-                Browse Collections
-              </span>
+              View All Services
             </LocalizedClientLink>
           </div>
+
+          
         </div>
 
-        {/* Slide Navigation */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-3 z-20">
-          {heroImages.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => goToSlide(index)}
-              className={`relative h-2 rounded-full transition-all duration-500 overflow-hidden ${
-                index === currentSlide
-                  ? "w-12 bg-white/30"
-                  : "w-2 bg-white/30 hover:bg-white/50"
-              }`}
-              aria-label={`Go to slide ${index + 1}`}
-            >
-              {index === currentSlide && (
-                <div
-                  className="absolute inset-y-0 left-0 bg-[#F16D34] rounded-full transition-all duration-100"
-                  style={{ width: `${progress}%` }}
-                />
-              )}
-            </button>
-          ))}
-        </div>
-
-        {/* Side Navigation Arrows */}
-        <button
-          onClick={() =>
-            goToSlide(
-              (currentSlide - 1 + heroImages.length) % heroImages.length
-            )
-          }
-          className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-20 w-12 h-12 md:w-14 md:h-14 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white/80 hover:bg-white/20 hover:text-white transition-all duration-300 hover:scale-110"
-          aria-label="Previous slide"
-        >
-          <svg
-            className="w-5 h-5 md:w-6 md:h-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-        </button>
-        <button
-          onClick={() => goToSlide((currentSlide + 1) % heroImages.length)}
-          className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-20 w-12 h-12 md:w-14 md:h-14 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white/80 hover:bg-white/20 hover:text-white transition-all duration-300 hover:scale-110"
-          aria-label="Next slide"
-        >
-          <svg
-            className="w-5 h-5 md:w-6 md:h-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 5l7 7-7 7"
-            />
-          </svg>
-        </button>
-
-        {/* Bottom Info Bar */}
-        <div className="absolute bottom-8 left-6 right-6 flex justify-between items-end z-10 pointer-events-none">
-          <div className="hidden md:flex items-center gap-4">
-            <div className="flex items-center gap-2 text-white/60 text-xs">
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                />
-              </svg>
-              <span>Makati, Philippines</span>
-            </div>
-          </div>
-
-          <div className="hidden md:flex items-center gap-6">
-            <div className="flex items-center gap-2 text-white/60 text-xs">
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              <span>Open Daily 9AM - 9PM</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Scroll Indicator */}
-        <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-20 hidden md:flex flex-col items-center gap-2 animate-bounce">
-          <span className="text-white/40 text-xs tracking-widest uppercase">
-            Scroll
-          </span>
-          <svg
-            className="w-5 h-5 text-white/40"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 14l-7 7m0 0l-7-7m7 7V3"
-            />
-          </svg>
-        </div>
       </div>
     </div>
   )

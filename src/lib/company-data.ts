@@ -28,39 +28,90 @@ export const companyData = {
 
   servicesOffered: [
     {
-      title: "Machine Repair & Routine Service",
-      description:
-        "Complete engine overhauls, tune-ups, and scheduled maintenance to keep your motorcycle running at peak performance. We handle everything from oil changes to full engine rebuilds.",
+      title: "🛠 Service & Preventive Maintenance",
+      items: [
+        "Periodic Maintenance Service (PMS)",
+        "Oil Change & Fluid Replacement",
+        "Scheduled Service (Minor / Major)",
+        "Pre-Ride Safety Inspection",
+        "Long-Ride / Touring Preparation",
+        "Storage & Seasonal Maintenance",
+        "Break-In Service (New Motorcycles)",
+      ],
     },
     {
-      title: "Inspection & Diagnostics",
-      description:
-        "Thorough inspection and advanced diagnostics of your entire motorbike using modern equipment to identify issues before they become major problems.",
+      title: "⚙ Repairs & Diagnostics",
+      items: [
+        "Brake System Repair & Bleeding",
+        "Clutch Adjustment & Replacement",
+        "Engine Tune-Up & Performance Checks",
+        "Electrical Diagnosis & Troubleshooting",
+        "Charging System & Battery Testing",
+        "Fuel System Cleaning & Calibration",
+        "Cooling System Inspection & Repair",
+        "Suspension Inspection & Adjustment",
+        "ECU Scan & Error Code Diagnosis",
+      ],
     },
     {
-      title: "Suspension Service",
-      description:
-        "Expert checking, adjustment, and repair of motorcycle suspension systems including forks, shocks, and linkages for optimal ride comfort and handling.",
+      title: "🔧 Accessories & Custom Installation",
+      items: [
+        "Accessory Installation & Calibration",
+        "Lighting Upgrades (Aux Lights, LEDs)",
+        "Horn, Electrical & Safety Upgrades",
+        "GPS, Phone Mount & Navigation Setup",
+        "Communication Systems Installation",
+        "Crash Guards, Skid Plates & Sliders",
+        "Luggage Systems & Mounting",
+        "Windscreen, Seats & Ergonomic Mods",
+      ],
     },
     {
-      title: "Electrical Repairs",
-      description:
-        "Complete electrical system diagnostics and repairs including wiring, lighting, battery service, and electronic component replacement.",
+      title: "🛞 Wheels, Drivetrain & Handling",
+      items: [
+        "Tyre Replacement & Wheel Balancing",
+        "Chain and Sprocket Replacement",
+        "Wheel Alignment & Inspection",
+        "Steering Head Bearing Inspection",
+        "Swingarm & Linkage Service",
+      ],
     },
     {
-      title: "Brake & Tire Service",
-      description:
-        "Professional brake inspection, pad replacement, fluid changes, and tire mounting, balancing, and replacement to ensure your safety on the road.",
+      title: "🧼 Detailing, Care & Protection",
+      items: [
+        "Bike Washing & Professional Detailing",
+        "Paint, Plastic & Metal Restoration",
+        "Ceramic Coating & Paint Protection",
+        "Rust Prevention & Treatment",
+        "Engine & Undercarriage Cleaning",
+      ],
     },
     {
-      title: "Customization & Modification",
-      description:
-        "Transform your motorcycle with custom builds, performance upgrades, aesthetic modifications, and personalized accessories to match your style.",
+      title: "🧪 Performance & Upgrade Services",
+      items: [
+        "Exhaust Installation (Slip-On / Full System)",
+        "Intake & Air Filter Upgrades",
+        "Performance Tuning Support",
+        "Weight Reduction & Setup Advice",
+      ],
     },
     {
-      title: "Carwash and Detailing",
-      description:
-        "Transform your motorcycle with custom builds, performance upgrades, aesthetic modifications, and personalized accessories to match your style.",
+      title: "🚨 Roadside Assistance & Recovery",
+      items: [
+        "Motorcycle Towing Service",
+        "Emergency Bike Rescue & Recovery",
+        "Breakdown Assistance Coordination",
+        "Accident Recovery Support",
+      ],
+    },
+    {
+      title: "🏍 Rider Support & Convenience",
+      items: [
+        "Pre-Purchase Motorcycle Inspection",
+        "Troubleshooting & Consultation",
+        "Warranty Support Assistance",
+        "After-Service Check & Follow-Up",
+      ],
     },
   ],
 
@@ -86,6 +137,17 @@ Furthermore, the company intends to organize and sponsor motorcycle-related even
 To support growth and expansion, the company may engage in franchising, licensing, and similar arrangements, subject to applicable laws and regulations. The company may also enter into partnerships, joint ventures, and collaborations with local and international suppliers, manufacturers, and related businesses to enhance its offerings.
 
 Lastly, the company may acquire, lease, or manage properties necessary for the operation and expansion of the business, subject to applicable laws, excluding financial leasing.`,
+  aboutUs: {
+    heading: "We Offer Complete Diagnostics for Your Motorcycle",
+    description: 
+      "Sixth Gear Moto Supply Café + Lounge is a rider-built motorcycle hub combining professional workshop service, premium accessories, riding gear, detailing, performance upgrades, and a relaxed café experience powered by First Gear Coffee.",
+    features: [
+      "Motorcycle Service and Advanced Diagnostics",
+      "Parts Accessories Luggage and Communications",
+      "Helmets Riding Gear and Apparel",
+      "Café Lounge and Rider Community",
+    ],
+  },
 }
 
 export type CompanyData = typeof companyData

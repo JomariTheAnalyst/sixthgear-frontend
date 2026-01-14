@@ -1,144 +1,134 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import Image from "next/image"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { companyData } from "@lib/company-data"
 
-const aboutImages = [
-  "/images/homepage/about/597618786_1369649107991065_560723022534235738_n.jpg",
-  "/images/homepage/about/7250717d-b405-45c1-8541-1ac9c11e97f1.jpg",
-]
-
-const SLIDE_DURATION = 10000 // 10 seconds
-
 const AboutSection = () => {
-  const [currentSlide, setCurrentSlide] = useState(0)
+  const { aboutUs } = companyData
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % aboutImages.length)
-    }, SLIDE_DURATION)
-
-    return () => clearInterval(interval)
-  }, [])
+  if (!aboutUs) return null
 
   return (
-    <div className="px-4 md:px-6 lg:px-8 py-4 md:py-6">
-      <div className="relative w-full h-[70vh] md:h-[80vh] bg-[#FF986A] rounded-2xl overflow-hidden shadow-xl">
-        <div className="absolute inset-0 grid grid-cols-1 lg:grid-cols-2">
-          {/* Left Content */}
-          <div className="flex flex-col justify-between p-8 md:p-12 lg:p-16 z-10">
-            {/* Title */}
-            <h2
-              className="text-[#1a1a1a] text-[12vw] md:text-[8vw] lg:text-[6vw] leading-[0.9] font-bold uppercase tracking-tight"
-              style={{ fontFamily: "Tanker, sans-serif" }}
-            >
-              About Us
-            </h2>
+    <section className="bg-[#1a1a1a] py-16 md:py-24 px-4 md:px-8 overflow-hidden">
+      <div className="max-w-[1440px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+        
+        {/* Left Column: Images Composition */}
+        <div className="relative w-full aspect-square md:aspect-[5/4] lg:aspect-square">
+          
+          {/* Top Image (Background/Workshop) */}
+          <div className="absolute top-0 right-0 w-[65%] h-[60%] z-10">
+             <div className="relative w-full h-full rounded-[2rem] overflow-hidden" style={{ clipPath: 'polygon(15% 0, 100% 0, 100% 100%, 0% 100%)' }}>
+              <Image
+                src="/images/homepage/about/about_bg.png"
+                alt="Motorcycle Workshop"
+                fill
+                className="object-cover hover:scale-105 transition-transform duration-700"
+                sizes="(max-width: 768px) 50vw, 33vw"
+              />
+            </div>
+          </div>
 
-            {/* Bottom Section - Button and Description */}
-            <div className="flex flex-col gap-6">
-              {/* CTA Button */}
-              <LocalizedClientLink
+          {/* Bottom Image (Foreground/Mechanic) */}
+          <div className="absolute bottom-0 left-0 w-[70%] h-[65%] z-20">
+            <div className="relative w-full h-full rounded-[2rem] border-[6px] border-[#1a1a1a] overflow-hidden shadow-2xl">
+              <Image
+                src="/images/homepage/about/about-small.png"
+                alt="Mechanic Working"
+                fill
+                className="object-cover hover:scale-105 transition-transform duration-700"
+                sizes="(max-width: 768px) 60vw, 40vw"
+              />
+            </div>
+            
+            {/* Play Button - Floating at intersection */}
+            <div className="absolute -top-10 -right-10 w-20 h-20 md:w-24 md:h-24 bg-gradient-to-br from-[#D97706] to-[#92400E] rounded-[1.5rem] flex items-center justify-center shadow-lg z-30 cursor-pointer hover:scale-110 transition-transform border-[6px] border-[#1a1a1a]">
+                <div className="w-8 h-8 md:w-10 md:h-10 bg-white rounded-full flex items-center justify-center pl-1">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="#D97706">
+                        <path d="M5 3l14 9-14 9V3z" />
+                    </svg>
+                </div>
+            </div>
+
+            {/* Happy Customer Card */}
+            <div className="absolute bottom-6 right-[-20%] md:right-[-10%] lg:right-[-40px] translate-y-1/2 md:translate-y-0 bg-white rounded-xl p-3 md:p-4 shadow-xl z-40 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+                <div className="flex -space-x-3">
+                    {[1, 2, 3].map((i) => (
+                        <div key={i} className={`w-8 h-8 md:w-10 md:h-10 rounded-full border-2 border-white flex items-center justify-center bg-gray-${100 + i*100} overflow-hidden`}>
+                             <Image 
+                                src={`https://api.dicebear.com/7.x/avataaars/png?seed=${i * 85}`} 
+                                alt="avatar" 
+                                width={40} 
+                                height={40} 
+                             />
+                        </div>
+                    ))}
+                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 border-white bg-[#F97316] flex items-center justify-center text-white text-xs font-bold">
+                        +
+                    </div>
+                </div>
+                <div>
+                    <p className="text-[#1a1a1a] font-bold text-xs md:text-sm">Happy Customer</p>
+                    <div className="flex text-[#F97316] text-[10px] md:text-xs">
+                        {"★".repeat(5)}
+                    </div>
+                </div>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Right Column: Content */}
+        <div className="flex flex-col gap-6 z-10">
+          
+          {/* Tagline */}
+          <div className="flex items-center gap-2 text-[#F97316] font-bold uppercase tracking-wider text-sm md:text-base">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2" />
+                <circle cx="7" cy="17" r="2" />
+                <path d="M9 17h6" />
+                <circle cx="17" cy="17" r="2" />
+            </svg>
+            <span>About Us</span>
+          </div>
+
+          {/* Heading */}
+          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight text-white font-tanker" style={{ fontFamily: "Tanker, sans-serif" }}>
+            {aboutUs.heading}
+          </h2>
+
+          {/* Description */}
+          <p className="text-gray-400 text-lg leading-relaxed">
+            {aboutUs.description}
+          </p>
+
+          {/* Features List */}
+          <div className="grid grid-cols-1 gap-4 mt-2">
+            {aboutUs.features.map((feature, idx) => (
+                <div key={idx} className="flex items-center gap-3">
+                    <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#F97316] flex items-center justify-center">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                    </div>
+                    <span className="text-white text-base md:text-lg">{feature}</span>
+                </div>
+            ))}
+          </div>
+
+          {/* CTA Button */}
+          <div className="mt-8">
+            <LocalizedClientLink
                 href="/about"
-                className="inline-flex items-center gap-3 px-5 py-3 bg-[#1a1a1a] text-white text-sm font-medium rounded-lg hover:bg-[#333] transition-all duration-300 group w-fit"
-              >
-                <span style={{ fontFamily: "Inter Display, sans-serif" }}>
-                  Learn more
-                </span>
-                <span className="w-7 h-7 bg-white rounded-full flex items-center justify-center group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-300">
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="#1a1a1a"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M7 17L17 7" />
-                    <path d="M7 7h10v10" />
-                  </svg>
-                </span>
-              </LocalizedClientLink>
-
-              {/* Description */}
-              <p
-                className="text-[#1a1a1a] text-base md:text-lg lg:text-xl leading-relaxed max-w-md font-medium"
-                style={{
-                  fontFamily: "Inter Display, sans-serif",
-                  fontWeight: 500,
-                }}
-              >
-                {companyData.purpose}
-              </p>
-            </div>
+                className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-[#D97706] to-[#EA580C] text-white font-bold rounded-lg hover:shadow-lg hover:to-[#D97706] transition-all transform hover:-translate-y-1"
+            >
+                More About Us
+            </LocalizedClientLink>
           </div>
 
-          {/* Right Image Slideshow */}
-          <div className="relative hidden lg:block">
-            <div className="absolute inset-4 lg:inset-8 rounded-xl overflow-hidden shadow-lg">
-              {aboutImages.map((image, index) => (
-                <div
-                  key={image}
-                  className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-                    index === currentSlide ? "opacity-100" : "opacity-0"
-                  }`}
-                >
-                  <Image
-                    src={image}
-                    alt={`About Sixthgear ${index + 1}`}
-                    fill
-                    className="object-cover"
-                    sizes="50vw"
-                  />
-                </div>
-              ))}
-
-              {/* Slide Indicators */}
-              <div className="absolute bottom-4 right-4 flex gap-2 z-10">
-                {aboutImages.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentSlide(index)}
-                    className={`h-1.5 rounded-full transition-all duration-500 ${
-                      index === currentSlide
-                        ? "w-6 bg-[#F16D34]"
-                        : "w-1.5 bg-white/60 hover:bg-white"
-                    }`}
-                    aria-label={`Go to slide ${index + 1}`}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Mobile Image */}
-          <div className="relative lg:hidden h-48 md:h-64">
-            <div className="absolute inset-4 rounded-xl overflow-hidden">
-              {aboutImages.map((image, index) => (
-                <div
-                  key={image}
-                  className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-                    index === currentSlide ? "opacity-100" : "opacity-0"
-                  }`}
-                >
-                  <Image
-                    src={image}
-                    alt={`About Sixthgear ${index + 1}`}
-                    fill
-                    className="object-cover"
-                    sizes="100vw"
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
-    </div>
+    </section>
   )
 }
 

@@ -6,8 +6,6 @@
  * Allows zoom/pan with marker staying at coordinates
  */
 
-import { useState } from "react"
-
 const storeInfo = {
   name: "Sixth Gear Moto Supply Café + Lounge",
   address: "3610 Bautista St, Makati City, Metro Manila",
