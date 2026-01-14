@@ -29,7 +29,7 @@ export default function Franchise() {
 
   return (
     <section
-      className="relative bg-[#F5F0E8] py-28 md:py-36 lg:py-44 overflow-hidden min-h-[750px] md:min-h-[850px] lg:min-h-[900px]"
+      className="relative bg-[#FFFFFF] py-28 md:py-36 lg:py-44 overflow-hidden min-h-[750px] md:min-h-[850px] lg:min-h-[900px]"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >

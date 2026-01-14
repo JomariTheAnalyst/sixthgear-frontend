@@ -113,12 +113,10 @@ export default function Footer() {
                   Moto Supply & Café + Lounge
                 </p>
                 <p
-                  className="text-white/50 text-xs md:text-sm uppercase tracking-wider"
+                  className="text-white/50 text-xs md:text-sm tracking-wider max-w-md"
                   style={{ fontFamily: "Inter Display, sans-serif" }}
                 >
-                  3610 Bautista St,
-                  <br />
-                  Makati City, Metro Manila
+                  From routine PMS to diagnostics, repairs, and upgrades, we ensure your motorcycle runs safely and reliably. Rider-focused technicians using proper tools, experience, and professional workshop standards.
                 </p>
               </div>
             </div>

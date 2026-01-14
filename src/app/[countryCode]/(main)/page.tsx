@@ -10,6 +10,10 @@ import CoffeeShowcase from "@modules/home/components/coffee-showcase"
 import ClientTestimonials from "@modules/home/components/client-testimonials"
 import CTABanner from "@modules/home/components/cta-banner"
 import Franchise from "@modules/home/components/franchise"
+import OurTeam from "@modules/home/components/our-team"
+import Stats from "@modules/home/components/stats"
+import Brands from "@modules/home/components/brands"
+import ClientStories from "@modules/home/components/client-stories"
 import StoreLocation from "@modules/home/components/store-location"
 import {
   HotDealsSection,
@@ -22,7 +26,7 @@ import { getRegion } from "@lib/data/regions"
 export const dynamic = "force-dynamic"
 
 export const metadata: Metadata = {
-  title: "Sixthgear | Moto Supply & Café",
+  title: "Home",
   description:
     "Your one-stop shop for motorcycle gear, parts, and great coffee in the Philippines.",
 }
@@ -90,14 +94,27 @@ export default async function Home(props: {
       {/* Our Services */}
       <OurServices />
 
+    
+      {/* <Stats/> */}
+
+       <Brands />
+
       {/* satisfied customers */}
       <SatisfiedCustomers />
+
+       
+
+      {/* Franchise Section */}
+      <Franchise />
+
+{/* Our Team Section */}
+      <OurTeam />
 
       {/* Client Testimonials */}
       <ClientTestimonials />
 
-      {/* Franchise Section */}
-      <Franchise />
+      {/* Client Stories */}
+      <ClientStories/>
 
 
       {/* CTA Banner - Opening Hours */}
