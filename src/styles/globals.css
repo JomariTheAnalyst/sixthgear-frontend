@@ -39,15 +39,18 @@
 
 @layer utilities {
   /* Chrome, Safari and Opera */
-  .no-scrollbar::-webkit-scrollbar {
+  .no-scrollbar::-webkit-scrollbar,
+  .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
 
-  .no-scrollbar::-webkit-scrollbar-track {
+  .no-scrollbar::-webkit-scrollbar-track,
+  .scrollbar-hide::-webkit-scrollbar-track {
     background-color: transparent;
   }
 
-  .no-scrollbar {
+  .no-scrollbar,
+  .scrollbar-hide {
     -ms-overflow-style: none; /* IE and Edge */
     scrollbar-width: none; /* Firefox */
   }

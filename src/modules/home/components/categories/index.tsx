@@ -10,44 +10,34 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
 
 const categories = [
   {
+    name: "Bags and Luggage",
+    slug: "bags-and-luggage",
+    image: "/images/product-categories/bags-and-boxes (1).png",
+  },
+  {
+    name: "Communications",
+    slug: "communications",
+    image: "/images/product-categories/intercom.png",
+  },
+  {
     name: "Helmets",
     slug: "helmets",
     image: "/images/product-categories/helmets.png",
   },
   {
+    name: "Parts and Accessories",
+    slug: "parts-and-accessories",
+    image: "/images/product-categories/exhaust.png", // Using exhaust as placeholder for parts
+  },
+  {
+    name: "Riding Gear",
+    slug: "riding-gear",
+    image: "/images/product-categories/shoes.png", // Using shoes/gear image
+  },
+  {
     name: "Apparel",
     slug: "apparel",
     image: "/images/product-categories/apparel.png",
-  },
-  {
-    name: "Shoes",
-    slug: "shoes",
-    image: "/images/product-categories/shoes.png",
-  },
-  {
-    name: "Bags & Boxes",
-    slug: "bags-and-boxes",
-    image: "/images/product-categories/bags-and-boxes (1).png",
-  },
-  {
-    name: "Intercom & Electronics",
-    slug: "intercom-electronics",
-    image: "/images/product-categories/intercom.png",
-  },
-  {
-    name: "Garage Accessories",
-    slug: "garage-accessories",
-    image: "/images/product-categories/garage-accessories.png",
-  },
-  {
-    name: "Consumables",
-    slug: "consumables",
-    image: "/images/product-categories/consumables.png",
-  },
-  {
-    name: "Exhausts",
-    slug: "exhausts",
-    image: "/images/product-categories/exhaust.png",
   },
 ]
 
@@ -142,7 +132,7 @@ export default function ShopByCategories() {
 
       {/* Categories Grid */}
       <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 lg:gap-8">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
           {categories.map((category, index) => (
             <CategoryCard
               key={category.slug}

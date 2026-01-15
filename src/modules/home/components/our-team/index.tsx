@@ -1,5 +1,6 @@
 "use client"
 
+import { useRef } from "react"
 import Image from "next/image"
 
 const teamMembers = [
@@ -9,7 +10,8 @@ const teamMembers = [
     title: "Workshop Head",
     description:
       "Experienced motorcycle technician specializing in diagnostics, repairs, and performance upgrades for big bikes and premium motorcycles.",
-    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=500&fit=crop&crop=face",
+    image:
+      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=500&fit=crop&crop=face",
   },
   {
     name: "JAMES",
@@ -17,7 +19,8 @@ const teamMembers = [
     title: "Service & Installation Specialist",
     description:
       "Focused on PMS, mechanical repairs, and proper installation of accessories, electronics, and safety upgrades.",
-    image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=500&fit=crop&crop=face",
+    image:
+      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=500&fit=crop&crop=face",
   },
   {
     name: "MARVIN",
@@ -25,7 +28,8 @@ const teamMembers = [
     title: "Rider Support & Coordination",
     description:
       "Your point of contact for service consultations, job updates, and ensuring a smooth workshop experience from start to finish.",
-    image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=500&fit=crop&crop=face",
+    image:
+      "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=500&fit=crop&crop=face",
   },
 ]
 
@@ -47,8 +51,19 @@ const TiktokIcon = () => (
   </svg>
 )
 
-
 export default function OurTeam() {
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+
+  const scroll = (direction: "left" | "right") => {
+    if (scrollContainerRef.current) {
+      const scrollAmount = 320
+      scrollContainerRef.current.scrollBy({
+        left: direction === "left" ? -scrollAmount : scrollAmount,
+        behavior: "smooth",
+      })
+    }
+  }
+
   return (
     <section className="relative">
       {/* Top Paper Cut */}
@@ -62,23 +77,143 @@ export default function OurTeam() {
 
       {/* Main Section */}
       <div className="bg-[#0A0A0A] relative overflow-hidden">
-        <div className="py-16 md:py-24 px-4 md:px-8">
+        <div className="py-12 md:py-16 lg:py-24">
           <div className="max-w-[1440px] mx-auto">
             {/* Header */}
-            <div className="text-center mb-12 md:mb-16">
+            <div className="text-center mb-8 md:mb-12 lg:mb-16 px-4 md:px-8">
               <h2
-                className="text-4xl md:text-6xl lg:text-7xl text-white mb-4"
+                className="text-3xl md:text-5xl lg:text-7xl text-white mb-3 md:mb-4"
                 style={{ fontFamily: "Tanker, sans-serif" }}
               >
                 Our Team
               </h2>
-              <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto">
+              <p className="text-base md:text-lg lg:text-xl text-gray-400 max-w-2xl mx-auto">
                 Riders, Technicians, and Professionals Who Care About Your Bike
               </p>
             </div>
 
-            {/* Team Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {/* Mobile/Tablet: Horizontal Scroll */}
+            <div className="lg:hidden">
+              <div
+                ref={scrollContainerRef}
+                className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide px-4 md:px-8"
+                style={{
+                  scrollbarWidth: "none",
+                  msOverflowStyle: "none",
+                  WebkitOverflowScrolling: "touch",
+                }}
+              >
+                {teamMembers.map((member, index) => (
+                  <div
+                    key={index}
+                    className="group flex-shrink-0 w-[80vw] sm:w-[60vw] md:w-[45vw] bg-[#141414] rounded-2xl overflow-hidden border border-gray-800 snap-center"
+                  >
+                    {/* Image Container */}
+                    <div className="relative h-64 sm:h-72 overflow-hidden">
+                      <Image
+                        src={member.image}
+                        alt={member.name}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 640px) 80vw, (max-width: 1024px) 60vw, 45vw"
+                      />
+                      {/* Gradient Overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-transparent to-transparent opacity-80" />
+                      {/* Decorative Elements */}
+                      <div className="absolute top-3 left-3 w-8 h-8 border-l-2 border-t-2 border-[#fca311]/40" />
+                      <div className="absolute top-3 right-3 w-8 h-8 border-r-2 border-t-2 border-[#fca311]/40" />
+                    </div>
+
+                    {/* Content */}
+                    <div className="p-5 text-center">
+                      <h3
+                        className="text-xl font-bold text-white mb-1"
+                        style={{ fontFamily: "Inter Display, sans-serif" }}
+                      >
+                        {member.name}
+                      </h3>
+                      <p className="text-[#fca311] font-semibold text-xs uppercase tracking-wider mb-1">
+                        {member.role}
+                      </p>
+                      <p className="text-gray-500 text-xs font-medium mb-3">
+                        {member.title}
+                      </p>
+                      <p className="text-gray-400 text-sm leading-relaxed mb-4 line-clamp-3">
+                        {member.description}
+                      </p>
+
+                      {/* Social Icons */}
+                      <div className="flex justify-center gap-3">
+                        <a
+                          href="#"
+                          className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-800 text-gray-400"
+                          aria-label={`${member.name}'s Facebook`}
+                        >
+                          <FacebookIcon />
+                        </a>
+                        <a
+                          href="#"
+                          className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-800 text-gray-400"
+                          aria-label={`${member.name}'s Instagram`}
+                        >
+                          <InstagramIcon />
+                        </a>
+                        <a
+                          href="#"
+                          className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-800 text-gray-400"
+                          aria-label={`${member.name}'s TikTok`}
+                        >
+                          <TiktokIcon />
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Navigation Arrows - Mobile/Tablet */}
+              <div className="flex justify-center gap-3 mt-6 px-4">
+                <button
+                  onClick={() => scroll("left")}
+                  className="w-11 h-11 bg-[#fca311] hover:bg-[#e5940e] rounded-lg flex items-center justify-center transition-colors active:scale-95"
+                  aria-label="Previous"
+                >
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="black"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M15 18l-6-6 6-6" />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => scroll("right")}
+                  className="w-11 h-11 bg-[#fca311] hover:bg-[#e5940e] rounded-lg flex items-center justify-center transition-colors active:scale-95"
+                  aria-label="Next"
+                >
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="black"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M9 18l6-6-6-6" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Desktop: Grid Layout */}
+            <div className="hidden lg:grid lg:grid-cols-3 gap-8 px-4 md:px-8">
               {teamMembers.map((member, index) => (
                 <div
                   key={index}
@@ -91,7 +226,7 @@ export default function OurTeam() {
                       alt={member.name}
                       fill
                       className="object-cover transition-transform duration-700 group-hover:scale-110"
-                      sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      sizes="33vw"
                     />
                     {/* Gradient Overlay */}
                     <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-transparent to-transparent opacity-80" />

@@ -4,14 +4,23 @@ import { useState, Fragment } from "react"
 import { Dialog, Transition } from "@headlessui/react"
 import { StoreRegion } from "@medusajs/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import { companyData } from "@lib/company-data"
 
 type MobileMenuProps = {
   regions: StoreRegion[]
-  navLinks: { name: string; href: string }[]
+  navLinks: { name: string; href: string; hasDropdown?: boolean }[]
 }
+
+// Services data for mobile menu - all 8 services
+const mobileServicesData = companyData.servicesOffered.map((service) => ({
+  title: service.title.replace(/^[^\s]+\s/, ""),
+  emoji: service.title.split(" ")[0],
+  href: "/services",
+}))
 
 export default function MobileMenu({ regions, navLinks }: MobileMenuProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const [isServicesExpanded, setIsServicesExpanded] = useState(false)
 
   const openMenu = () => setIsOpen(true)
   const closeMenu = () => setIsOpen(false)
@@ -101,13 +110,80 @@ export default function MobileMenu({ regions, navLinks }: MobileMenuProps) {
                   <ul className="space-y-1">
                     {navLinks.map((link) => (
                       <li key={link.name}>
-                        <LocalizedClientLink
-                          href={link.href}
-                          onClick={closeMenu}
-                          className="flex items-center px-4 py-3 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-xl transition-colors duration-200"
-                        >
-                          {link.name}
-                        </LocalizedClientLink>
+                        {link.hasDropdown ? (
+                          <div>
+                            <button
+                              onClick={() =>
+                                setIsServicesExpanded(!isServicesExpanded)
+                              }
+                              className="flex items-center justify-between w-full px-4 py-3 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-xl transition-colors duration-200"
+                            >
+                              <span>{link.name}</span>
+                              <svg
+                                className={`w-4 h-4 transition-transform duration-200 ${
+                                  isServicesExpanded ? "rotate-180" : ""
+                                }`}
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M19 9l-7 7-7-7"
+                                />
+                              </svg>
+                            </button>
+
+                            {/* Expandable Services List */}
+                            {isServicesExpanded && (
+                              <div className="mt-1 ml-4 space-y-1 animate-in slide-in-from-top-2 duration-200">
+                                {mobileServicesData.map((service, index) => (
+                                  <LocalizedClientLink
+                                    key={index}
+                                    href={service.href}
+                                    onClick={closeMenu}
+                                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-600 hover:text-[#F16D34] hover:bg-orange-50 rounded-lg transition-colors duration-200"
+                                  >
+                                    <span className="text-base">
+                                      {service.emoji}
+                                    </span>
+                                    <span>{service.title}</span>
+                                  </LocalizedClientLink>
+                                ))}
+                                <LocalizedClientLink
+                                  href="/services"
+                                  onClick={closeMenu}
+                                  className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-[#F16D34] hover:bg-orange-50 rounded-lg transition-colors duration-200"
+                                >
+                                  <span>View All Services</span>
+                                  <svg
+                                    className="w-4 h-4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M9 5l7 7-7 7"
+                                    />
+                                  </svg>
+                                </LocalizedClientLink>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <LocalizedClientLink
+                            href={link.href}
+                            onClick={closeMenu}
+                            className="flex items-center px-4 py-3 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-xl transition-colors duration-200"
+                          >
+                            {link.name}
+                          </LocalizedClientLink>
+                        )}
                       </li>
                     ))}
                   </ul>

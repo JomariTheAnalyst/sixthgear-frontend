@@ -1,6 +1,6 @@
 "use client"
 
-import { Badge, Heading, Input, Label, Text } from "@medusajs/ui"
+import { Badge, Heading, Text } from "@medusajs/ui"
 import React from "react"
 
 import { applyPromotions } from "@lib/data/cart"
@@ -17,7 +17,7 @@ type DiscountCodeProps = {
 }
 
 const DiscountCode: React.FC<DiscountCodeProps> = ({ cart }) => {
-  const [isOpen, setIsOpen] = React.useState(false)
+  const [isLoading, setIsLoading] = React.useState(false)
   const [errorMessage, setErrorMessage] = React.useState("")
 
   const { promotions = [] } = cart
@@ -33,9 +33,11 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({ cart }) => {
 
   const addPromotionCode = async (formData: FormData) => {
     setErrorMessage("")
+    setIsLoading(true)
 
     const code = formData.get("code")
     if (!code) {
+      setIsLoading(false)
       return
     }
     const input = document.getElementById("promotion-input") as HTMLInputElement
@@ -48,6 +50,8 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({ cart }) => {
       await applyPromotions(codes)
     } catch (e: any) {
       setErrorMessage(e.message)
+    } finally {
+      setIsLoading(false)
     }
 
     if (input) {
@@ -57,48 +61,34 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({ cart }) => {
 
   return (
     <div className="w-full bg-white flex flex-col">
-      <div className="txt-medium">
-        <form action={(a) => addPromotionCode(a)} className="w-full mb-5">
-          <Label className="flex gap-x-1 my-2 items-center">
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              type="button"
-              className="txt-medium text-ui-fg-interactive hover:text-ui-fg-interactive-hover"
-              data-testid="add-discount-button"
+      <div>
+        <form action={(a) => addPromotionCode(a)} className="w-full mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Discount code or gift card
+          </label>
+          <div className="flex w-full gap-x-2">
+            <input
+              id="promotion-input"
+              name="code"
+              type="text"
+              placeholder="Enter code"
+              className="flex-1 h-12 px-4 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F16D34] focus:border-transparent transition-all"
+              autoFocus={false}
+              data-testid="discount-input"
+            />
+            <SubmitButton
+              variant="secondary"
+              data-testid="discount-apply-button"
+              className="h-12 px-6 bg-gray-900 hover:bg-gray-800 text-white font-medium rounded-lg transition-colors"
+              isLoading={isLoading}
             >
-              Add Promotion Code(s)
-            </button>
-
-            {/* <Tooltip content="You can add multiple promotion codes">
-              <InformationCircleSolid color="var(--fg-muted)" />
-            </Tooltip> */}
-          </Label>
-
-          {isOpen && (
-            <>
-              <div className="flex w-full gap-x-2">
-                <Input
-                  className="size-full"
-                  id="promotion-input"
-                  name="code"
-                  type="text"
-                  autoFocus={false}
-                  data-testid="discount-input"
-                />
-                <SubmitButton
-                  variant="secondary"
-                  data-testid="discount-apply-button"
-                >
-                  Apply
-                </SubmitButton>
-              </div>
-
-              <ErrorMessage
-                error={errorMessage}
-                data-testid="discount-error-message"
-              />
-            </>
-          )}
+              Apply
+            </SubmitButton>
+          </div>
+          <ErrorMessage
+            error={errorMessage}
+            data-testid="discount-error-message"
+          />
         </form>
 
         {promotions.length > 0 && (

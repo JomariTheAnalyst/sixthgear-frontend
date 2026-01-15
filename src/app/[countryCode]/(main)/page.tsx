@@ -12,6 +12,7 @@ import CTABanner from "@modules/home/components/cta-banner"
 import Franchise from "@modules/home/components/franchise"
 import OurTeam from "@modules/home/components/our-team"
 import Stats from "@modules/home/components/stats"
+import ProjectsSection from "@modules/home/components/projects"
 import Brands from "@modules/home/components/brands"
 import ClientStories from "@modules/home/components/client-stories"
 import StoreLocation from "@modules/home/components/store-location"
@@ -94,33 +95,32 @@ export default async function Home(props: {
       {/* Our Services */}
       <OurServices />
 
-    
+      {/* Project Section */}
+      <ProjectsSection />
+
       {/* <Stats/> */}
 
-       <Brands />
+      <Brands />
 
       {/* satisfied customers */}
       <SatisfiedCustomers />
 
-       
-
       {/* Franchise Section */}
       <Franchise />
 
-{/* Our Team Section */}
+      {/* Our Team Section */}
       <OurTeam />
 
       {/* Client Testimonials */}
       <ClientTestimonials />
 
       {/* Client Stories */}
-      <ClientStories/>
-
+      <ClientStories />
 
       {/* CTA Banner - Opening Hours */}
       <CTABanner />
 
-       {/* Store Location */}
+      {/* Store Location */}
       <StoreLocation />
     </>
   )

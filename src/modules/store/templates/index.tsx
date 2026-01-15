@@ -1,10 +1,10 @@
 import { Suspense } from "react"
 
 import SkeletonProductGrid from "@modules/skeletons/templates/skeleton-product-grid"
-import RefinementList from "@modules/store/components/refinement-list"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 
 import PaginatedProducts from "./paginated-products"
+import StoreLayout from "./store-layout"
 
 const StoreTemplate = ({
   sortBy,
@@ -19,15 +19,11 @@ const StoreTemplate = ({
   const sort = sortBy || "created_at"
 
   return (
-    <div
-      className="flex flex-col small:flex-row small:items-start py-6 content-container"
-      data-testid="category-container"
-    >
-      <RefinementList sortBy={sort} />
-      <div className="w-full">
-        <div className="mb-8 text-2xl-semi">
-          <h1 data-testid="store-page-title">All products</h1>
-        </div>
+    <StoreLayout sortBy={sort}>
+      <div className="p-6 md:p-8 w-full">
+         <div className="mb-6 flex justify-between items-end">
+            {/* We can put a title here if desired, or keep it clean like the image */}
+         </div>
         <Suspense fallback={<SkeletonProductGrid />}>
           <PaginatedProducts
             sortBy={sort}
@@ -36,7 +32,7 @@ const StoreTemplate = ({
           />
         </Suspense>
       </div>
-    </div>
+    </StoreLayout>
   )
 }
 

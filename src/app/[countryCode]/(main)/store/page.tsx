@@ -8,6 +8,10 @@ export const metadata: Metadata = {
   description: "Explore all of our products.",
 }
 
+// Revalidate page every 60 seconds in production
+// In development, Next.js ignores this and fetches fresh data
+export const revalidate = 60
+
 type Params = {
   searchParams: Promise<{
     sortBy?: SortOptions

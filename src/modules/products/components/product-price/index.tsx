@@ -18,41 +18,53 @@ export default function ProductPrice({
   const selectedPrice = variant ? variantPrice : cheapestPrice
 
   if (!selectedPrice) {
-    return <div className="block w-32 h-9 bg-gray-100 animate-pulse" />
+    return <div className="block w-32 h-9 bg-gray-100 animate-pulse rounded" />
   }
 
+  const isOnSale = selectedPrice.price_type === "sale"
+
   return (
-    <div className="flex flex-col text-ui-fg-base">
-      <span
-        className={clx("text-xl-semi", {
-          "text-ui-fg-interactive": selectedPrice.price_type === "sale",
-        })}
-      >
-        {!variant && "From "}
+    <div className="flex flex-col gap-y-2">
+      {/* Sale Badge */}
+      {isOnSale && (
+        <span className="inline-flex items-center px-3 py-1 bg-[#F16D34] text-white text-xs font-bold uppercase tracking-wider w-fit">
+          On Sale Price
+        </span>
+      )}
+
+      {/* Price Display */}
+      <div className="flex items-baseline gap-3 flex-wrap">
+        {/* Current/Sale Price */}
         <span
+          className={clx(
+            "text-2xl md:text-3xl font-bold",
+            isOnSale ? "text-[#F16D34]" : "text-gray-900"
+          )}
           data-testid="product-price"
           data-value={selectedPrice.calculated_price_number}
         >
+          {!variant && "From "}
           {selectedPrice.calculated_price}
         </span>
-      </span>
-      {selectedPrice.price_type === "sale" && (
-        <>
-          <p>
-            <span className="text-ui-fg-subtle">Original: </span>
-            <span
-              className="line-through"
-              data-testid="original-product-price"
-              data-value={selectedPrice.original_price_number}
-            >
-              {selectedPrice.original_price}
-            </span>
-          </p>
-          <span className="text-ui-fg-interactive">
-            -{selectedPrice.percentage_diff}%
+
+        {/* Original Price (strikethrough) */}
+        {isOnSale && selectedPrice.original_price && (
+          <span
+            className="text-lg text-gray-400 line-through"
+            data-testid="original-product-price"
+            data-value={selectedPrice.original_price_number}
+          >
+            {selectedPrice.original_price}
           </span>
-        </>
-      )}
+        )}
+
+        {/* Discount Percentage */}
+        {isOnSale && selectedPrice.percentage_diff && (
+          <span className="text-sm font-semibold text-gray-500">
+            (-{selectedPrice.percentage_diff}%)
+          </span>
+        )}
+      </div>
     </div>
   )
 }

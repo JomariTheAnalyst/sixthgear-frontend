@@ -1,6 +1,6 @@
 import { listProductsWithSort } from "@lib/data/products"
 import { getRegion } from "@lib/data/regions"
-import ProductPreview from "@modules/products/components/product-preview"
+import ProductCard from "@modules/home/components/product-sections/product-card"
 import { Pagination } from "@modules/store/components/pagination"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 
@@ -64,18 +64,21 @@ export default async function PaginatedProducts({
     countryCode,
   })
 
+  // Add mock "New" badge to recent products for visual flair if needed, 
+  // or rely on created_at logic. For now, we pass the products as is.
+
   const totalPages = Math.ceil(count / PRODUCT_LIMIT)
 
   return (
     <>
       <ul
-        className="grid grid-cols-2 w-full small:grid-cols-3 medium:grid-cols-4 gap-x-6 gap-y-8"
+        className="grid grid-cols-2 lg:grid-cols-4 gap-6 w-full"
         data-testid="products-list"
       >
         {products.map((p) => {
           return (
             <li key={p.id}>
-              <ProductPreview product={p} region={region} />
+              <ProductCard product={p} region={region} />
             </li>
           )
         })}

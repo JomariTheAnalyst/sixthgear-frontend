@@ -49,8 +49,14 @@ export const listProducts = async ({
     ...(await getAuthHeaders()),
   }
 
+  const cacheOptions = await getCacheOptions("products")
+
+  // Use ISR with revalidation to ensure new products appear
+  // In development: data refreshes every request
+  // In production: data revalidates every 60 seconds
   const next = {
-    ...(await getCacheOptions("products")),
+    ...cacheOptions,
+    revalidate: process.env.NODE_ENV === "development" ? 0 : 60,
   }
 
   return sdk.client
@@ -68,7 +74,7 @@ export const listProducts = async ({
         },
         headers,
         next,
-        cache: "force-cache",
+        // Remove force-cache to allow revalidation
       }
     )
     .then(({ products, count }) => {
@@ -112,7 +118,7 @@ export const listProductsWithSort = async ({
     pageParam: 0,
     queryParams: {
       ...queryParams,
-      limit: 100,
+      limit: 2000,
     },
     countryCode,
   })

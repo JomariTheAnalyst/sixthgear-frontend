@@ -139,13 +139,38 @@ To support growth and expansion, the company may engage in franchising, licensin
 Lastly, the company may acquire, lease, or manage properties necessary for the operation and expansion of the business, subject to applicable laws, excluding financial leasing.`,
   aboutUs: {
     heading: "We Offer Complete Diagnostics for Your Motorcycle",
-    description: 
+    description:
       "Sixth Gear Moto Supply Café + Lounge is a rider-built motorcycle hub combining professional workshop service, premium accessories, riding gear, detailing, performance upgrades, and a relaxed café experience powered by First Gear Coffee.",
     features: [
       "Motorcycle Service and Advanced Diagnostics",
       "Parts Accessories Luggage and Communications",
       "Helmets Riding Gear and Apparel",
       "Café Lounge and Rider Community",
+    ],
+  },
+
+  spaceAndExperiences: {
+    heading: "Our Space & Experiences",
+    subheading: "Great Coffee, Good Rides, Better Conversations",
+    items: [
+      {
+        title: "Signature Coffee & Brews",
+        description:
+          "Carefully crafted coffee using quality beans, brewed to fuel riders, creatives, and everyday coffee lovers.",
+        image: "/images/homepage/projects/coffee.jpg",
+      },
+      {
+        title: "Rider Lounge & Hangout",
+        description:
+          "A relaxed café and lounge where riders unwind, connect, and share stories between rides and wrench sessions.",
+        image: "/images/homepage/projects/lounge.jpg",
+      },
+      {
+        title: "Community & Meetups",
+        description:
+          "A welcoming space for rider meetups, small events, and casual gatherings built around coffee and motorcycle culture.",
+        image: "/images/homepage/projects/community.jpg",
+      },
     ],
   },
 }

@@ -4,6 +4,8 @@
  * Coffee Showcase Section
  * Displays featured coffee drinks with paper cut design
  * Uses Tanker font for headings and Inter Display for body text
+ * Mobile/Tablet: Horizontal swipe carousel
+ * Desktop: 3-column grid
  */
 
 // Featured coffee drinks data
@@ -44,11 +46,11 @@ export default function CoffeeShowcase() {
 
       {/* Main Brown Section */}
       <div className="bg-[#47271f] relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-16 py-16 md:py-24">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-16 py-12 md:py-16 lg:py-24">
           {/* Main Heading - Top */}
-          <div className="text-center mb-12 md:mb-16">
+          <div className="text-center mb-10 md:mb-12 lg:mb-16">
             <h2
-              className="text-4xl md:text-6xl lg:text-7xl xl:text-8xl leading-tight"
+              className="text-3xl md:text-5xl lg:text-7xl xl:text-8xl leading-tight"
               style={{ fontFamily: "Tanker, sans-serif" }}
             >
               <span className="text-[#F16D34]">Sixthgear</span>
@@ -58,8 +60,90 @@ export default function CoffeeShowcase() {
             </h2>
           </div>
 
-          {/* Featured Drinks Grid - Dominating Images */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 lg:gap-10">
+          {/* Mobile/Tablet: Horizontal Scroll */}
+          <div className="lg:hidden">
+            <div
+              className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide -mx-4 px-4"
+              style={{
+                scrollbarWidth: "none",
+                msOverflowStyle: "none",
+                WebkitOverflowScrolling: "touch",
+              }}
+            >
+              {featuredDrinks.map((drink) => (
+                <div
+                  key={drink.id}
+                  className="group relative flex-shrink-0 w-[75vw] sm:w-[55vw] md:w-[45vw] snap-center"
+                >
+                  {/* Card */}
+                  <div className="bg-[#F5F5F0] rounded-2xl overflow-hidden transition-all duration-300">
+                    {/* Image Container */}
+                    <div className="relative aspect-[2/3] bg-gradient-to-b from-gray-50 to-gray-100">
+                      <img
+                        src={drink.image}
+                        alt={drink.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Coffee Title Below Card */}
+                  <div className="text-center mt-4">
+                    <h3
+                      className="text-white text-lg sm:text-xl uppercase tracking-wide"
+                      style={{ fontFamily: "Tanker, sans-serif" }}
+                    >
+                      {drink.name}
+                    </h3>
+                    <p
+                      className="text-gray-400 text-sm leading-relaxed mt-1 px-2"
+                      style={{
+                        fontFamily: "Inter Display, sans-serif",
+                        fontWeight: 500,
+                      }}
+                    >
+                      {drink.description}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {/* Swipe Indicator */}
+            <div className="flex justify-center mt-4">
+              <span className="text-xs text-amber-400/60 flex items-center gap-1">
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M7 16l-4-4m0 0l4-4m-4 4h18"
+                  />
+                </svg>
+                Swipe to explore
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M17 8l4 4m0 0l-4 4m4-4H3"
+                  />
+                </svg>
+              </span>
+            </div>
+          </div>
+
+          {/* Desktop: Grid Layout */}
+          <div className="hidden lg:grid lg:grid-cols-3 gap-8 lg:gap-10">
             {featuredDrinks.map((drink) => (
               <div key={drink.id} className="group relative">
                 {/* Card - Large & Dominating */}
@@ -97,9 +181,9 @@ export default function CoffeeShowcase() {
           </div>
 
           {/* Subheading - Bottom */}
-          <div className="text-center mt-16 md:mt-20">
+          <div className="text-center mt-12 md:mt-16 lg:mt-20">
             <p
-              className="text-gray-300 text-base md:text-lg lg:text-xl max-w-3xl mx-auto mb-8"
+              className="text-gray-300 text-sm md:text-base lg:text-xl max-w-3xl mx-auto mb-6 md:mb-8"
               style={{
                 fontFamily: "Inter Display, sans-serif",
                 fontWeight: 500,
@@ -109,7 +193,7 @@ export default function CoffeeShowcase() {
               reconnect. Handcrafted brews served with passion, right here at
               Sixthgear.
             </p>
-            <button className="bg-[#F16D34] hover:bg-[#ff7a3d] text-white font-bold px-10 py-4 rounded-none transition-all duration-300 inline-flex items-center gap-3 group text-lg">
+            <button className="bg-[#F16D34] hover:bg-[#ff7a3d] text-white font-bold px-8 md:px-10 py-3 md:py-4 rounded-none transition-all duration-300 inline-flex items-center gap-2 md:gap-3 group text-base md:text-lg">
               <span
                 style={{
                   fontFamily: "Inter Display, sans-serif",
@@ -119,7 +203,7 @@ export default function CoffeeShowcase() {
                 View Full Menu
               </span>
               <svg
-                className="w-6 h-6 transform group-hover:translate-x-1 transition-transform"
+                className="w-5 h-5 md:w-6 md:h-6 transform group-hover:translate-x-1 transition-transform"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
