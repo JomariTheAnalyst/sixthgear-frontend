@@ -1,6 +1,5 @@
 "use client"
 
-import { Plus } from "@medusajs/icons"
 import { Button, Heading } from "@medusajs/ui"
 import { useEffect, useState, useActionState } from "react"
 
@@ -49,22 +48,38 @@ const AddAddress = ({
   return (
     <>
       <button
-        className="border border-ui-border-base rounded-rounded p-5 min-h-[220px] h-full w-full flex flex-col justify-between"
+        className="group bg-white border-2 border-dashed border-gray-300 rounded-xl p-6 min-h-[200px] h-full w-full flex flex-col items-center justify-center gap-3 hover:border-orange-400 hover:bg-orange-50/50 transition-all"
         onClick={open}
         data-testid="add-address-button"
       >
-        <span className="text-base-semi">New address</span>
-        <Plus />
+        <div className="w-14 h-14 rounded-full bg-gray-100 group-hover:bg-orange-100 flex items-center justify-center transition-colors">
+          <svg
+            className="w-7 h-7 text-gray-400 group-hover:text-orange-500 transition-colors"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 4v16m8-8H4"
+            />
+          </svg>
+        </div>
+        <span className="text-sm font-medium text-gray-600 group-hover:text-orange-600 transition-colors">
+          Add New Address
+        </span>
       </button>
 
       <Modal isOpen={state} close={close} data-testid="add-address-modal">
         <Modal.Title>
-          <Heading className="mb-2">Add address</Heading>
+          <Heading className="mb-2">Add New Address</Heading>
         </Modal.Title>
         <form action={formAction}>
           <Modal.Body>
-            <div className="flex flex-col gap-y-2">
-              <div className="grid grid-cols-2 gap-x-2">
+            <div className="flex flex-col gap-y-3">
+              <div className="grid grid-cols-2 gap-x-3">
                 <Input
                   label="First name"
                   name="first_name"
@@ -81,7 +96,7 @@ const AddAddress = ({
                 />
               </div>
               <Input
-                label="Company"
+                label="Company (optional)"
                 name="company"
                 autoComplete="organization"
                 data-testid="company-input"
@@ -94,12 +109,12 @@ const AddAddress = ({
                 data-testid="address-1-input"
               />
               <Input
-                label="Apartment, suite, etc."
+                label="Apartment, suite, etc. (optional)"
                 name="address_2"
                 autoComplete="address-line2"
                 data-testid="address-2-input"
               />
-              <div className="grid grid-cols-[144px_1fr] gap-x-2">
+              <div className="grid grid-cols-[144px_1fr] gap-x-3">
                 <Input
                   label="Postal code"
                   name="postal_code"
@@ -137,9 +152,22 @@ const AddAddress = ({
             </div>
             {formState.error && (
               <div
-                className="text-rose-500 text-small-regular py-2"
+                className="flex items-center gap-2 mt-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm"
                 data-testid="address-error"
               >
+                <svg
+                  className="w-5 h-5 flex-shrink-0"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
                 {formState.error}
               </div>
             )}
@@ -150,12 +178,17 @@ const AddAddress = ({
                 type="reset"
                 variant="secondary"
                 onClick={close}
-                className="h-10"
+                className="h-10 px-5"
                 data-testid="cancel-button"
               >
                 Cancel
               </Button>
-              <SubmitButton data-testid="save-button">Save</SubmitButton>
+              <SubmitButton
+                data-testid="save-button"
+                className="h-10 px-5 bg-orange-500 hover:bg-orange-600"
+              >
+                Save Address
+              </SubmitButton>
             </div>
           </Modal.Footer>
         </form>

@@ -18,6 +18,8 @@ export interface ProductPricing {
 
 /**
  * Format price in PHP with peso sign and thousands separators
+ * Note: Medusa v2 returns calculated_amount already in the display unit (pesos),
+ * not in the smallest unit (centavos), so no division needed.
  */
 export function formatPrice(
   amount: number | null,
@@ -25,15 +27,12 @@ export function formatPrice(
 ): string | null {
   if (amount === null || amount === undefined) return null
 
-  // Medusa stores prices in smallest unit (centavos for PHP)
-  const value = amount / 100
-
   return new Intl.NumberFormat("en-PH", {
     style: "currency",
     currency: currencyCode.toUpperCase(),
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  }).format(value)
+  }).format(amount)
 }
 
 /**

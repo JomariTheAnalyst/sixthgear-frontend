@@ -8,7 +8,7 @@ import { StoreRegion, HttpTypes } from "@medusajs/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import CartDropdown from "@modules/layout/components/cart-dropdown"
 import MobileMenu from "./mobile-menu"
-import { companyData } from "@lib/company-data"
+import { ServiceCategory } from "@lib/services-data"
 
 const navLinks = [
   { name: "Home", href: "/" },
@@ -18,25 +18,13 @@ const navLinks = [
   { name: "Contact", href: "/contact" },
 ]
 
-// Services dropdown data - with icons and short descriptions
-const servicesDropdownData = companyData.servicesOffered.map((service) => {
-  const title = service.title.replace(/^[^\s]+\s/, "") // Remove emoji prefix
-  // Create very short descriptions (first item only)
-  const shortDesc = service.items[0]
-
-  return {
-    title,
-    description: shortDesc,
-    href: "/services",
-  }
-})
-
 interface NavClientProps {
   regions: StoreRegion[]
   cart: HttpTypes.StoreCart | null
+  servicesData: ServiceCategory[]
 }
 
-const NavClient = ({ regions, cart }: NavClientProps) => {
+const NavClient = ({ regions, cart, servicesData }: NavClientProps) => {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isServicesOpen, setIsServicesOpen] = useState(false)
   const servicesTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -196,7 +184,7 @@ const NavClient = ({ regions, cart }: NavClientProps) => {
                       >
                         {/* Services Grid - 2 columns x 4 rows with icons */}
                         <div className="grid grid-cols-2 gap-x-8 gap-y-6">
-                          {servicesDropdownData.map((service, index) => {
+                          {servicesData.map((service, index) => {
                             // Icon mapping for each service
                             const icons = [
                               // Service & Preventive Maintenance
@@ -336,8 +324,8 @@ const NavClient = ({ regions, cart }: NavClientProps) => {
 
                             return (
                               <LocalizedClientLink
-                                key={index}
-                                href={service.href}
+                                key={service.id}
+                                href={`/services/${service.slug}`}
                                 className={`group/item flex items-start gap-4 p-3 rounded-lg transition-all duration-200 ${
                                   isScrolled || !isHomepage
                                     ? "hover:bg-gray-100"
@@ -370,7 +358,7 @@ const NavClient = ({ regions, cart }: NavClientProps) => {
                                         : "text-gray-400"
                                     }`}
                                   >
-                                    {service.description}
+                                    {service.items[0]}
                                   </p>
                                 </div>
                               </LocalizedClientLink>

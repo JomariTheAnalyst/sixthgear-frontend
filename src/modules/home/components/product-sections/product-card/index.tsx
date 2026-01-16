@@ -1,12 +1,12 @@
 /**
  * ProductCard Component
- * Shows SALE badge and crossed-out original price when on sale
+ * Shows SALE badge, sizes, and color swatches
  * All data from backend - no hardcoded values
  */
 
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import Image from "next/image"
 import { HttpTypes } from "@medusajs/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
@@ -14,6 +14,13 @@ import {
   getProductPricing,
   hasMultipleVariants,
 } from "@lib/util/get-product-pricing"
+import {
+  isColorOption,
+  isSizeOption,
+  getUniqueOptionValues,
+  getColorHexForValue,
+  COLOR_NAME_TO_HEX,
+} from "@lib/util/variant-helpers"
 import { addToCart } from "@lib/data/cart"
 
 export type BadgeMode = "discount" | "rank" | "new" | "hot" | "none"
@@ -34,14 +41,27 @@ export default function ProductCard({ product, region }: ProductCardProps) {
 
   const imageUrl = product.thumbnail || product.images?.[0]?.url
 
-  // Get available variants count
-  const variantCount = product.variants?.length || 0
-  const availabilityText =
-    variantCount > 1
-      ? `Available in ${variantCount} sizes`
-      : variantCount === 1
-      ? "Available in 1 size"
-      : ""
+  // Extract size and color options
+  const { sizeOption, colorOption, sizes, colors } = useMemo(() => {
+    const options = product.options || []
+    const variants = product.variants || []
+    const sizeOpt = options.find((o) => isSizeOption(o))
+    const colorOpt = options.find((o) => isColorOption(o))
+
+    const sizeValues = sizeOpt
+      ? getUniqueOptionValues(variants, sizeOpt.id)
+      : []
+    const colorValues = colorOpt
+      ? getUniqueOptionValues(variants, colorOpt.id)
+      : []
+
+    return {
+      sizeOption: sizeOpt,
+      colorOption: colorOpt,
+      sizes: sizeValues,
+      colors: colorValues,
+    }
+  }, [product.options, product.variants])
 
   // Get first variant for quick add to cart
   const firstVariant = product.variants?.[0]
@@ -65,6 +85,37 @@ export default function ProductCard({ product, region }: ProductCardProps) {
     } finally {
       setIsAdding(false)
     }
+  }
+
+  // Get color hex for display
+  const getColorHex = (colorValue: string): string => {
+    if (colorOption) {
+      const variants = product.variants || []
+      const hex = getColorHexForValue(variants, colorOption.id, colorValue)
+      if (hex) return hex
+    }
+    // Fallback to color name mapping
+    const normalized = colorValue.toLowerCase().trim()
+    if (COLOR_NAME_TO_HEX[normalized]) {
+      return COLOR_NAME_TO_HEX[normalized]
+    }
+    // Try partial match
+    for (const [name, hex] of Object.entries(COLOR_NAME_TO_HEX)) {
+      if (normalized.includes(name) || name.includes(normalized)) {
+        return hex
+      }
+    }
+    return "#E5E7EB" // Default gray
+  }
+
+  // Check if color is light (for border visibility)
+  const isLightColor = (hex: string): boolean => {
+    const cleanHex = hex.replace("#", "")
+    const r = parseInt(cleanHex.substring(0, 2), 16)
+    const g = parseInt(cleanHex.substring(2, 4), 16)
+    const b = parseInt(cleanHex.substring(4, 6), 16)
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+    return luminance > 0.6
   }
 
   return (
@@ -138,8 +189,8 @@ export default function ProductCard({ product, region }: ProductCardProps) {
         {/* Line separator between image and text */}
         <div className="h-px bg-gray-200" />
 
-        {/* Product Info - Minimal vertical spacing */}
-        <div className="flex flex-col p-3">
+        {/* Product Info */}
+        <div className="flex flex-col p-3 gap-2">
           {/* Product Title */}
           <h3
             className="text-sm font-semibold text-gray-900 leading-snug line-clamp-2 group-hover:text-[#F16D34] transition-colors"
@@ -148,24 +199,67 @@ export default function ProductCard({ product, region }: ProductCardProps) {
             {product.title}
           </h3>
 
-          {/* Availability - minimal spacing */}
-          {availabilityText && (
-            <p
-              className="text-xs text-gray-400 mt-0.5"
-              style={{ fontFamily: "BRHendrix, sans-serif" }}
-            >
-              {availabilityText}
-            </p>
+          {/* Sizes Display */}
+          {sizes.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {sizes.slice(0, 6).map((size) => (
+                <span
+                  key={size}
+                  className="px-2 py-0.5 text-[10px] font-medium text-gray-600 bg-gray-100 rounded"
+                  style={{ fontFamily: "BRHendrix, sans-serif" }}
+                >
+                  {size}
+                </span>
+              ))}
+              {sizes.length > 6 && (
+                <span
+                  className="px-2 py-0.5 text-[10px] font-medium text-gray-400"
+                  style={{ fontFamily: "BRHendrix, sans-serif" }}
+                >
+                  +{sizes.length - 6}
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Color Swatches */}
+          {colors.length > 0 && (
+            <div className="flex items-center gap-1.5">
+              {colors.slice(0, 5).map((color) => {
+                const hex = getColorHex(color)
+                const isLight = isLightColor(hex)
+                return (
+                  <div
+                    key={color}
+                    className={`w-4 h-4 rounded-full flex-shrink-0 ${
+                      isLight ? "border border-gray-300" : ""
+                    }`}
+                    style={{ backgroundColor: hex }}
+                    title={color}
+                  />
+                )
+              })}
+              {colors.length > 5 && (
+                <span
+                  className="text-[10px] text-gray-400 ml-0.5"
+                  style={{ fontFamily: "BRHendrix, sans-serif" }}
+                >
+                  +{colors.length - 5}
+                </span>
+              )}
+            </div>
           )}
 
           {/* Price - with sale support */}
-          <div className="mt-1">
+          <div className="mt-auto pt-1">
             {pricing.hasPrice ? (
               <p
                 className="text-sm flex items-center gap-2 flex-wrap"
                 style={{ fontFamily: "BRHendrix, sans-serif" }}
               >
-                {isMultiVariant && <span className="text-gray-400">From </span>}
+                {isMultiVariant && (
+                  <span className="text-gray-400">Price: </span>
+                )}
                 <span
                   className={`font-bold ${
                     pricing.isOnSale ? "text-red-500" : "text-[#F16D34]"

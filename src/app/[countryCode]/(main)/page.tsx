@@ -22,6 +22,8 @@ import {
   NewArrivalsSection,
 } from "@modules/home/components/product-sections"
 import { getRegion } from "@lib/data/regions"
+import { getMarketingForPath } from "@lib/data/marketing"
+import { BannerSlot, PopupAds } from "@modules/marketing"
 
 // Force dynamic rendering for real-time sale price updates
 export const dynamic = "force-dynamic"
@@ -63,10 +65,20 @@ export default async function Home(props: {
     return null
   }
 
+  // Fetch marketing content for homepage
+  const marketing = await getMarketingForPath("/")
+
   return (
     <>
       {/* Hero Section */}
       <Hero />
+
+      {/* Top Banner Slot */}
+      <BannerSlot
+        banners={marketing.banners}
+        placement="home_hero_below"
+        className="px-4 md:px-8 lg:px-16 py-4 max-w-7xl mx-auto"
+      />
 
       {/* About Section */}
       <AboutSection />
@@ -78,6 +90,13 @@ export default async function Home(props: {
       <Suspense fallback={<ProductSectionSkeleton />}>
         <HotDealsSection region={region} countryCode={countryCode} />
       </Suspense>
+
+      {/* Mid-page Banner Slot */}
+      <BannerSlot
+        banners={marketing.banners}
+        placement="home_mid"
+        className="px-4 md:px-8 lg:px-16 py-8 max-w-7xl mx-auto"
+      />
 
       {/* Best Sellers */}
       <Suspense fallback={<ProductSectionSkeleton />}>
@@ -122,6 +141,9 @@ export default async function Home(props: {
 
       {/* Store Location */}
       <StoreLocation />
+
+      {/* Popup Ads - Shows after page load */}
+      <PopupAds popups={marketing.popups} />
     </>
   )
 }

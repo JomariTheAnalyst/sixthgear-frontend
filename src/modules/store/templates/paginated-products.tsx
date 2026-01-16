@@ -1,5 +1,6 @@
 import { listProductsWithSort } from "@lib/data/products"
 import { getRegion } from "@lib/data/regions"
+import { getProductsByTagValue } from "@lib/data/tags"
 import ProductCard from "@modules/home/components/product-sections/product-card"
 import { Pagination } from "@modules/store/components/pagination"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
@@ -21,6 +22,7 @@ export default async function PaginatedProducts({
   categoryId,
   productsIds,
   countryCode,
+  tagValue,
 }: {
   sortBy?: SortOptions
   page: number
@@ -28,9 +30,80 @@ export default async function PaginatedProducts({
   categoryId?: string
   productsIds?: string[]
   countryCode: string
+  tagValue?: string
 }) {
+  const region = await getRegion(countryCode)
+
+  if (!region) {
+    return null
+  }
+
+  // If filtering by tag, use the tag-based query
+  if (tagValue) {
+    const products = await getProductsByTagValue(tagValue, 50, region.id)
+
+    if (products.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+            <svg
+              className="w-8 h-8 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+              />
+            </svg>
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-1">
+            No products found
+          </h3>
+          <p className="text-gray-500 text-sm">
+            Try adjusting your filters or check back later
+          </p>
+        </div>
+      )
+    }
+
+    // Paginate
+    const startIndex = (page - 1) * PRODUCT_LIMIT
+    const paginatedProducts = products.slice(
+      startIndex,
+      startIndex + PRODUCT_LIMIT
+    )
+    const totalPages = Math.ceil(products.length / PRODUCT_LIMIT)
+
+    return (
+      <>
+        <ul
+          className="grid grid-cols-2 lg:grid-cols-4 gap-6 w-full"
+          data-testid="products-list"
+        >
+          {paginatedProducts.map((p) => (
+            <li key={p.id}>
+              <ProductCard product={p} region={region} />
+            </li>
+          ))}
+        </ul>
+        {totalPages > 1 && (
+          <Pagination
+            data-testid="product-pagination"
+            page={page}
+            totalPages={totalPages}
+          />
+        )}
+      </>
+    )
+  }
+
+  // Default: use collection/category based query
   const queryParams: PaginatedProductsParams = {
-    limit: 12,
+    limit: PRODUCT_LIMIT,
   }
 
   if (collectionId) {
@@ -49,12 +122,6 @@ export default async function PaginatedProducts({
     queryParams["order"] = "created_at"
   }
 
-  const region = await getRegion(countryCode)
-
-  if (!region) {
-    return null
-  }
-
   let {
     response: { products, count },
   } = await listProductsWithSort({
@@ -64,10 +131,35 @@ export default async function PaginatedProducts({
     countryCode,
   })
 
-  // Add mock "New" badge to recent products for visual flair if needed, 
-  // or rely on created_at logic. For now, we pass the products as is.
-
   const totalPages = Math.ceil(count / PRODUCT_LIMIT)
+
+  if (products.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+          <svg
+            className="w-8 h-8 text-gray-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.5}
+              d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+            />
+          </svg>
+        </div>
+        <h3 className="text-lg font-medium text-gray-900 mb-1">
+          No products found
+        </h3>
+        <p className="text-gray-500 text-sm">
+          Try adjusting your filters or check back later
+        </p>
+      </div>
+    )
+  }
 
   return (
     <>
@@ -75,13 +167,11 @@ export default async function PaginatedProducts({
         className="grid grid-cols-2 lg:grid-cols-4 gap-6 w-full"
         data-testid="products-list"
       >
-        {products.map((p) => {
-          return (
-            <li key={p.id}>
-              <ProductCard product={p} region={region} />
-            </li>
-          )
-        })}
+        {products.map((p) => (
+          <li key={p.id}>
+            <ProductCard product={p} region={region} />
+          </li>
+        ))}
       </ul>
       {totalPages > 1 && (
         <Pagination

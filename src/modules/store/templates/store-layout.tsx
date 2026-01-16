@@ -1,8 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useTransition } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { HttpTypes } from "@medusajs/types"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
+import StoreFilters from "@modules/store/components/store-filters"
 
 const mockBrands = [
   "Gille",
@@ -15,34 +17,33 @@ const mockBrands = [
   "SEC",
 ]
 
-const mockCategories = [
-  "Helmets",
-  "Riding Gear",
-  "Apparel",
-  "Bags & Luggage",
-  "Parts & Accessories",
-  "Communications",
-]
-
 type StoreLayoutProps = {
   children: React.ReactNode
   sortBy?: SortOptions
+  categories?: HttpTypes.StoreProductCategory[]
 }
 
-export default function StoreLayout({ children, sortBy }: StoreLayoutProps) {
+export default function StoreLayout({
+  children,
+  sortBy,
+  categories = [],
+}: StoreLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null)
+  const [isPending, startTransition] = useTransition()
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
-  // Handle Sort Change
+  // Handle Sort Change with transition
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newSortBy = e.target.value as SortOptions
     const params = new URLSearchParams(searchParams)
     params.set("sortBy", newSortBy)
-    router.push(`${pathname}?${params.toString()}`)
+    startTransition(() => {
+      router.push(`${pathname}?${params.toString()}`)
+    })
   }
 
   return (
@@ -171,26 +172,41 @@ export default function StoreLayout({ children, sortBy }: StoreLayoutProps) {
           }`}
         >
           <div className="p-6 md:p-8 space-y-8 sticky top-36 max-h-[calc(100vh-8rem)] overflow-y-auto custom-scrollbar">
-             {/* Search */}
-             <div>
-                <h3 className="font-bold text-gray-900 mb-4 uppercase tracking-wide text-sm">Search</h3>
-                <div className="relative">
-                    <input 
-                        type="text" 
-                        placeholder="Search products..." 
-                        className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#F16D34] focus:border-[#F16D34]"
-                    />
-                    <svg className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                </div>
-             </div>
+            {/* Search */}
+            <div>
+              <h3 className="font-bold text-gray-900 mb-4 uppercase tracking-wide text-sm">
+                Search
+              </h3>
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search products..."
+                  className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#F16D34] focus:border-[#F16D34]"
+                />
+                <svg
+                  className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+              </div>
+            </div>
 
             {/* Shop by Brand */}
             <div>
               <h3 className="font-bold text-gray-900 mb-4 uppercase tracking-wide text-sm flex justify-between items-center group cursor-pointer">
                 Shop by Brand
-                <span className="text-gray-400 group-hover:text-gray-600">-</span>
+                <span className="text-gray-400 group-hover:text-gray-600">
+                  -
+                </span>
               </h3>
               <div className="space-y-2.5 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                 {mockBrands.map((brand) => (
@@ -198,7 +214,7 @@ export default function StoreLayout({ children, sortBy }: StoreLayoutProps) {
                     key={brand}
                     className="flex items-center gap-3 cursor-pointer group"
                     onClick={(e) => {
-                      e.preventDefault();
+                      e.preventDefault()
                       setSelectedBrand(selectedBrand === brand ? null : brand)
                     }}
                   >
@@ -221,7 +237,13 @@ export default function StoreLayout({ children, sortBy }: StoreLayoutProps) {
                         <polyline points="20 6 9 17 4 12"></polyline>
                       </svg>
                     </div>
-                    <span className={`text-sm transition-colors ${selectedBrand === brand ? 'text-gray-900 font-medium' : 'text-gray-600 group-hover:text-gray-900'}`}>
+                    <span
+                      className={`text-sm transition-colors ${
+                        selectedBrand === brand
+                          ? "text-gray-900 font-medium"
+                          : "text-gray-600 group-hover:text-gray-900"
+                      }`}
+                    >
                       {brand}
                     </span>
                   </label>
@@ -229,58 +251,40 @@ export default function StoreLayout({ children, sortBy }: StoreLayoutProps) {
               </div>
             </div>
 
-            {/* Categories */}
+            {/* Categories - Real data from Medusa */}
+            <StoreFilters categories={categories} />
+
+            {/* Size Mock */}
             <div>
-              <h3 className="font-bold text-gray-900 mb-4 uppercase tracking-wide text-sm">Categories</h3>
-              <div className="space-y-2.5">
-                {mockCategories.map((cat) => (
-                  <label
-                    key={cat}
-                    className="flex items-center gap-3 cursor-pointer group"
+              <h3 className="font-bold text-gray-900 mb-4 uppercase tracking-wide text-sm">
+                Size
+              </h3>
+              <div className="grid grid-cols-3 gap-2">
+                {["XS", "S", "M", "L", "XL", "2XL"].map((size) => (
+                  <button
+                    key={size}
+                    className="border border-gray-200 py-2 text-xs font-semibold text-gray-600 hover:border-[#F16D34] hover:text-[#F16D34] transition-colors rounded"
                   >
-                     <div className="relative flex items-center">
-                      <input
-                        type="checkbox"
-                        className="peer appearance-none w-5 h-5 border border-gray-300 rounded-sm checked:bg-[#F16D34] checked:border-transparent transition-all"
-                      />
-                      <svg
-                        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 text-white opacity-0 peer-checked:opacity-100 pointer-events-none"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <polyline points="20 6 9 17 4 12"></polyline>
-                      </svg>
-                    </div>
-                    <span className="text-sm text-gray-600 group-hover:text-gray-900 transition-colors">
-                      {cat}
-                    </span>
-                  </label>
+                    {size}
+                  </button>
                 ))}
               </div>
             </div>
-            
-            {/* Size Mock */}
-            <div>
-              <h3 className="font-bold text-gray-900 mb-4 uppercase tracking-wide text-sm">Size</h3>
-              <div className="grid grid-cols-3 gap-2">
-                 {["XS", "S", "M", "L", "XL", "2XL"].map(size => (
-                     <button key={size} className="border border-gray-200 py-2 text-xs font-semibold text-gray-600 hover:border-[#F16D34] hover:text-[#F16D34] transition-colors rounded">
-                        {size}
-                     </button>
-                 ))}
-              </div>
-            </div>
-
           </div>
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 min-w-0">
-           {children}
+        <div className="flex-1 min-w-0 relative">
+          {/* Loading overlay */}
+          {isPending && (
+            <div className="absolute inset-0 bg-white/60 z-10 flex items-center justify-center">
+              <div className="flex items-center gap-2 text-gray-500">
+                <span className="w-5 h-5 border-2 border-[#F16D34] border-t-transparent rounded-full animate-spin" />
+                <span className="text-sm font-medium">Loading...</span>
+              </div>
+            </div>
+          )}
+          {children}
         </div>
       </div>
     </div>

@@ -7,16 +7,26 @@ import { SortOptions } from "@modules/store/components/refinement-list/sort-prod
 import { getAuthHeaders, getCacheOptions } from "./cookies"
 import { getRegion, retrieveRegion } from "./regions"
 
+// Fields for listing pages - includes options for size/color display
+const LISTING_FIELDS =
+  "id,title,handle,thumbnail,*variants.calculated_price,+variants.inventory_quantity,*variants.options,*options"
+
+// Full fields for product detail pages
+const DETAIL_FIELDS =
+  "*variants.calculated_price,+variants.inventory_quantity,*variants.images,*variants.options,*options,+metadata,+tags"
+
 export const listProducts = async ({
   pageParam = 1,
   queryParams,
   countryCode,
   regionId,
+  minimal = false,
 }: {
   pageParam?: number
   queryParams?: HttpTypes.FindParams & HttpTypes.StoreProductListParams
   countryCode?: string
   regionId?: string
+  minimal?: boolean
 }): Promise<{
   response: { products: HttpTypes.StoreProduct[]; count: number }
   nextPage: number | null
@@ -51,12 +61,10 @@ export const listProducts = async ({
 
   const cacheOptions = await getCacheOptions("products")
 
-  // Use ISR with revalidation to ensure new products appear
-  // In development: data refreshes every request
-  // In production: data revalidates every 60 seconds
+  // Use ISR with revalidation - 30s for faster cache refresh
   const next = {
     ...cacheOptions,
-    revalidate: process.env.NODE_ENV === "development" ? 0 : 60,
+    revalidate: 30,
   }
 
   return sdk.client
@@ -68,13 +76,11 @@ export const listProducts = async ({
           limit,
           offset,
           region_id: region?.id,
-          fields:
-            "*variants.calculated_price,+variants.inventory_quantity,*variants.images,+metadata,+tags,",
+          fields: minimal ? LISTING_FIELDS : DETAIL_FIELDS,
           ...queryParams,
         },
         headers,
         next,
-        // Remove force-cache to allow revalidation
       }
     )
     .then(({ products, count }) => {
@@ -92,11 +98,10 @@ export const listProducts = async ({
 }
 
 /**
- * This will fetch 100 products to the Next.js cache and sort them based on the sortBy parameter.
- * It will then return the paginated products based on the page and limit parameters.
+ * Optimized listing fetch with proper pagination (no more fetching 2000 products)
  */
 export const listProductsWithSort = async ({
-  page = 0,
+  page = 1,
   queryParams,
   sortBy = "created_at",
   countryCode,
@@ -112,28 +117,44 @@ export const listProductsWithSort = async ({
 }> => {
   const limit = queryParams?.limit || 12
 
+  // Build order param based on sortBy
+  let orderParam: string | undefined
+  switch (sortBy) {
+    case "price_asc":
+      orderParam = "variants.calculated_price.calculated_amount"
+      break
+    case "price_desc":
+      orderParam = "-variants.calculated_price.calculated_amount"
+      break
+    case "created_at":
+      orderParam = "created_at"
+      break
+    case "created_at_desc":
+      orderParam = "-created_at"
+      break
+    default:
+      orderParam = "created_at"
+  }
+
+  // Fetch only the page we need with proper offset
   const {
     response: { products, count },
   } = await listProducts({
-    pageParam: 0,
+    pageParam: page,
     queryParams: {
       ...queryParams,
-      limit: 2000,
+      limit,
+      order: orderParam,
     },
     countryCode,
+    minimal: true, // Use minimal fields for listing
   })
 
-  const sortedProducts = sortProducts(products, sortBy)
-
-  const pageParam = (page - 1) * limit
-
-  const nextPage = count > pageParam + limit ? pageParam + limit : null
-
-  const paginatedProducts = sortedProducts.slice(pageParam, pageParam + limit)
+  const nextPage = count > page * limit ? page + 1 : null
 
   return {
     response: {
-      products: paginatedProducts,
+      products,
       count,
     },
     nextPage,

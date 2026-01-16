@@ -1,9 +1,10 @@
 /**
  * Hot Deals Section
+ * Fetches products tagged with "Hot Deals"
  */
 
 import { HttpTypes } from "@medusajs/types"
-import { getProductsByCollectionHandle } from "@lib/data/collections"
+import { getProductsByTagValue } from "@lib/data/tags"
 import ProductSection from "../product-section"
 
 interface HotDealsSectionProps {
@@ -13,12 +14,10 @@ interface HotDealsSectionProps {
 
 export default async function HotDealsSection({
   region,
+  countryCode,
 }: HotDealsSectionProps) {
-  let products = await getProductsByCollectionHandle("hot-deals", 4, region.id)
-
-  if (!products || products.length === 0) {
-    products = await getProductsByCollectionHandle("hot-deals1", 4, region.id)
-  }
+  // Try both formats - "Hot Deals" (admin) and "hot-deal" (normalized)
+  const products = await getProductsByTagValue("Hot Deals", 4, region.id)
 
   if (!products || products.length === 0) {
     return null
@@ -29,7 +28,7 @@ export default async function HotDealsSection({
       title="Hot Right Now"
       products={products}
       region={region}
-      viewAllLink="/collections/hot-deals"
+      viewAllLink={`/${countryCode}/store?tag=hot-deals`}
       maxItems={4}
     />
   )

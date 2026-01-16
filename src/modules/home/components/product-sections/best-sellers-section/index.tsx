@@ -1,9 +1,10 @@
 /**
  * Best Sellers Section
+ * Fetches products tagged with "Best Seller"
  */
 
 import { HttpTypes } from "@medusajs/types"
-import { getProductsByCollectionHandle } from "@lib/data/collections"
+import { getProductsByTagValue } from "@lib/data/tags"
 import ProductSection from "../product-section"
 
 interface BestSellersSectionProps {
@@ -13,12 +14,10 @@ interface BestSellersSectionProps {
 
 export default async function BestSellersSection({
   region,
+  countryCode,
 }: BestSellersSectionProps) {
-  const products = await getProductsByCollectionHandle(
-    "best-sellers",
-    4,
-    region.id
-  )
+  // Try both formats - "Best Seller" (admin) and "best-seller" (normalized)
+  const products = await getProductsByTagValue("Best Seller", 4, region.id)
 
   if (!products || products.length === 0) {
     return null
@@ -29,7 +28,7 @@ export default async function BestSellersSection({
       title="Best Sellers"
       products={products}
       region={region}
-      viewAllLink="/collections/best-sellers"
+      viewAllLink={`/${countryCode}/store?tag=best-seller`}
       maxItems={4}
     />
   )

@@ -2,51 +2,16 @@
 
 import { useRef } from "react"
 import Image from "next/image"
+import Link from "next/link"
+import { servicesData } from "@lib/services-data"
 
-const servicesData = [
-  {
-    title: "Chain & Sprocket Replacement",
-    description:
-      "Full service replacement and adjustment of drive chains and sprockets for smooth power delivery.",
-    image:
-      "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80",
-  },
-  {
-    title: "Tyre Replacement",
-    description:
-      "Professional tire mounting and balancing services to ensure safety and performance on the road.",
-    image:
-      "https://images.unsplash.com/photo-1571293521801-fd3dbf02a4f2?w=600&q=80",
-  },
-  {
-    title: "Electrical Work",
-    description:
-      "Complete diagnostics and repairs for all electrical systems including lighting, battery, and ecu.",
-    image:
-      "https://images.unsplash.com/photo-1449426468159-d96dbf08f19f?w=600&q=80",
-  },
-  {
-    title: "Brake & Clutch Repair",
-    description:
-      "Expert servicing of hydraulic and mechanical braking systems for optimal stopping power.",
-    image:
-      "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=600&q=80",
-  },
-  {
-    title: "Engine Diagnostics",
-    description:
-      "Advanced engine analysis using state-of-the-art diagnostic tools to identify any issues.",
-    image:
-      "https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?w=600&q=80",
-  },
-  {
-    title: "Suspension Tuning",
-    description:
-      "Custom suspension setup and tuning for your specific riding style and weight.",
-    image:
-      "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=600&q=80",
-  },
-]
+// Map service categories to display cards with images
+const serviceCards = servicesData.map((service) => ({
+  title: service.shortTitle,
+  description: service.description,
+  image: service.image,
+  slug: service.slug,
+}))
 
 export default function OurServices() {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
@@ -126,9 +91,10 @@ export default function OurServices() {
             msOverflowStyle: "none",
           }}
         >
-          {servicesData.map((service, index) => (
-            <div
+          {serviceCards.map((service, index) => (
+            <Link
               key={index}
+              href={`/services/${service.slug}`}
               className="relative flex-shrink-0 w-[75vw] sm:w-[60vw] md:w-[350px] lg:w-[400px] h-[400px] md:h-[450px] lg:h-[500px] snap-center rounded-2xl overflow-hidden group cursor-pointer"
             >
               {/* Background Image */}
@@ -156,7 +122,7 @@ export default function OurServices() {
                 </p>
                 <div className="h-1 w-12 bg-[#fca311] rounded-full group-hover:w-full transition-all duration-500" />
               </div>
-            </div>
+            </Link>
           ))}
         </div>
 

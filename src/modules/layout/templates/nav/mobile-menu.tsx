@@ -4,19 +4,12 @@ import { useState, Fragment } from "react"
 import { Dialog, Transition } from "@headlessui/react"
 import { StoreRegion } from "@medusajs/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
-import { companyData } from "@lib/company-data"
+import { servicesData } from "@lib/services-data"
 
 type MobileMenuProps = {
   regions: StoreRegion[]
   navLinks: { name: string; href: string; hasDropdown?: boolean }[]
 }
-
-// Services data for mobile menu - all 8 services
-const mobileServicesData = companyData.servicesOffered.map((service) => ({
-  title: service.title.replace(/^[^\s]+\s/, ""),
-  emoji: service.title.split(" ")[0],
-  href: "/services",
-}))
 
 export default function MobileMenu({ regions, navLinks }: MobileMenuProps) {
   const [isOpen, setIsOpen] = useState(false)
@@ -139,16 +132,13 @@ export default function MobileMenu({ regions, navLinks }: MobileMenuProps) {
                             {/* Expandable Services List */}
                             {isServicesExpanded && (
                               <div className="mt-1 ml-4 space-y-1 animate-in slide-in-from-top-2 duration-200">
-                                {mobileServicesData.map((service, index) => (
+                                {servicesData.map((service) => (
                                   <LocalizedClientLink
-                                    key={index}
-                                    href={service.href}
+                                    key={service.id}
+                                    href={`/services/${service.slug}`}
                                     onClick={closeMenu}
                                     className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-600 hover:text-[#F16D34] hover:bg-orange-50 rounded-lg transition-colors duration-200"
                                   >
-                                    <span className="text-base">
-                                      {service.emoji}
-                                    </span>
                                     <span>{service.title}</span>
                                   </LocalizedClientLink>
                                 ))}
