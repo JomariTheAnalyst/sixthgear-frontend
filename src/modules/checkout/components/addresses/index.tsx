@@ -57,7 +57,7 @@ const Addresses = ({
             )}
           </div>
           <Heading level="h2" className="text-lg font-semibold text-gray-900">
-            Shipping Address
+            Contact & Shipping Information
           </Heading>
         </div>
         {!isOpen && cart?.shipping_address && (
@@ -97,7 +97,7 @@ const Addresses = ({
               className="w-full h-12 bg-gray-900 hover:bg-[#F16D34] text-white font-semibold rounded-lg transition-colors"
               data-testid="submit-address-button"
             >
-              Continue to Delivery
+              Continue to Shipping
             </SubmitButton>
             <ErrorMessage error={message} data-testid="address-error-message" />
           </div>

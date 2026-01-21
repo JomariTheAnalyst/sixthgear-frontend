@@ -1,29 +1,52 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { HttpTypes } from "@medusajs/types"
 import { useCartDrawer } from "@lib/context/cart-drawer-context"
 import { convertToLocale } from "@lib/util/money"
-import { updateLineItem } from "@lib/data/cart"
+import { updateLineItem, changeLineItemVariant } from "@lib/data/cart"
+import { getProductByHandle } from "@lib/data/products"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import DeleteButton from "@modules/common/components/delete-button"
 import Thumbnail from "@modules/products/components/thumbnail"
-import { useRouter } from "next/navigation"
+import DiscountCode from "@modules/checkout/components/discount-code"
+import { useRouter, useParams } from "next/navigation"
 
 type CartDrawerProps = {
   cart: HttpTypes.StoreCart | null
 }
 
+type VariantSelectorState = {
+  itemId: string
+  productHandle: string
+  currentVariantId: string
+  quantity: number
+} | null
+
 export default function CartDrawer({ cart }: CartDrawerProps) {
   const { isCartOpen, closeCart } = useCartDrawer()
   const [updatingItem, setUpdatingItem] = useState<string | null>(null)
   const [isRedirecting, setIsRedirecting] = useState(false)
+  const [variantSelector, setVariantSelector] =
+    useState<VariantSelectorState>(null)
+  const [productData, setProductData] =
+    useState<HttpTypes.StoreProduct | null>(null)
+  const [loadingProduct, setLoadingProduct] = useState(false)
+  const [changingVariant, setChangingVariant] = useState(false)
   const router = useRouter()
+  const params = useParams()
+  const countryCode = (params.countryCode as string) || "ph"
 
   // Close on ESC key
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeCart()
+      if (e.key === "Escape") {
+        if (variantSelector) {
+          setVariantSelector(null)
+        } else {
+          closeCart()
+        }
+      }
     }
     if (isCartOpen) {
       document.addEventListener("keydown", handleEsc)
@@ -33,7 +56,23 @@ export default function CartDrawer({ cart }: CartDrawerProps) {
       document.removeEventListener("keydown", handleEsc)
       document.body.style.overflow = ""
     }
-  }, [isCartOpen, closeCart])
+  }, [isCartOpen, closeCart, variantSelector])
+
+  // Fetch product data when variant selector opens
+  useEffect(() => {
+    if (variantSelector) {
+      setLoadingProduct(true)
+      getProductByHandle(variantSelector.productHandle, countryCode)
+        .then((product) => {
+          setProductData(product)
+        })
+        .finally(() => {
+          setLoadingProduct(false)
+        })
+    } else {
+      setProductData(null)
+    }
+  }, [variantSelector, countryCode])
 
   const totalItems =
     cart?.items?.reduce((acc, item) => acc + item.quantity, 0) || 0
@@ -58,6 +97,44 @@ export default function CartDrawer({ cart }: CartDrawerProps) {
     setIsRedirecting(true)
     closeCart()
     router.push("/checkout")
+  }
+
+  const openVariantSelector = (item: HttpTypes.StoreCartLineItem) => {
+    setVariantSelector({
+      itemId: item.id,
+      productHandle: item.product_handle || "",
+      currentVariantId: item.variant_id || "",
+      quantity: item.quantity,
+    })
+  }
+
+  const handleVariantChange = async (newVariantId: string) => {
+    if (!variantSelector || newVariantId === variantSelector.currentVariantId) {
+      setVariantSelector(null)
+      return
+    }
+
+    setChangingVariant(true)
+    try {
+      await changeLineItemVariant({
+        lineId: variantSelector.itemId,
+        newVariantId,
+        quantity: variantSelector.quantity,
+      })
+      setVariantSelector(null)
+    } catch (error) {
+      console.error("Failed to change variant:", error)
+    } finally {
+      setChangingVariant(false)
+    }
+  }
+
+  // Get option values from a variant
+  const getVariantOptions = (variant: HttpTypes.StoreProductVariant) => {
+    return variant.options?.map((opt) => ({
+      name: opt.option?.title || "",
+      value: opt.value || "",
+    })) || []
   }
 
   return (
@@ -153,14 +230,32 @@ export default function CartDrawer({ cart }: CartDrawerProps) {
                             />
                           </div>
 
-                          {/* Variant Info - Show variant title or subtitle */}
+                          {/* Variant Info - Clickable to change */}
                           {(item.variant?.title || item.subtitle) && (
-                            <div className="mt-1.5 text-xs text-gray-600">
-                              <span className="font-medium">Variant:</span>{" "}
-                              <span className="text-gray-800">
+                            <button
+                              onClick={() => openVariantSelector(item)}
+                              className="mt-1.5 text-xs text-left flex items-center gap-1 group/variant"
+                            >
+                              <span className="font-medium text-gray-600">
+                                Variant:
+                              </span>{" "}
+                              <span className="text-gray-800 group-hover/variant:text-[#F16D34] transition-colors">
                                 {item.variant?.title || item.subtitle}
                               </span>
-                            </div>
+                              <svg
+                                className="w-3 h-3 text-gray-400 group-hover/variant:text-[#F16D34] transition-colors"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                                />
+                              </svg>
+                            </button>
                           )}
 
                           {/* Sale Badge & Price */}
@@ -274,6 +369,14 @@ export default function CartDrawer({ cart }: CartDrawerProps) {
                   <span className="font-bold text-[#F16D34]">HIGH DEMAND!</span>{" "}
                   {totalItems} added to cart in the last few days
                 </span>
+              </div>
+
+              {/* Discount Code Section */}
+              <div className="mx-6 mt-4 p-4 bg-white rounded-lg border border-gray-200">
+                <DiscountCode 
+                  cart={cart as HttpTypes.StoreCart & { promotions: HttpTypes.StorePromotion[] }} 
+                  compact 
+                />
               </div>
             </>
           ) : (
@@ -439,6 +542,170 @@ export default function CartDrawer({ cart }: CartDrawerProps) {
                 </svg>
                 Guaranteed Authenticity
               </span>
+            </div>
+          </div>
+        )}
+
+        {/* Variant Selector Modal */}
+        {variantSelector && (
+          <div className="absolute inset-0 bg-black/50 z-10 flex items-end">
+            <div className="bg-white w-full rounded-t-2xl max-h-[70%] flex flex-col">
+              {/* Modal Header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                <h3 className="text-lg font-bold text-gray-900">
+                  Select Variant
+                </h3>
+                <button
+                  onClick={() => setVariantSelector(null)}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Modal Content */}
+              <div className="flex-1 overflow-y-auto p-6">
+                {loadingProduct ? (
+                  <div className="flex items-center justify-center py-12">
+                    <svg
+                      className="animate-spin h-8 w-8 text-gray-400"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        fill="none"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                      />
+                    </svg>
+                  </div>
+                ) : productData?.variants && productData.variants.length > 0 ? (
+                  <div className="space-y-2">
+                    {productData.variants.map((variant) => {
+                      const isSelected =
+                        variant.id === variantSelector.currentVariantId
+                      const options = getVariantOptions(variant)
+                      const inStock =
+                        (variant.inventory_quantity ?? 0) > 0 ||
+                        variant.manage_inventory === false
+
+                      return (
+                        <button
+                          key={variant.id}
+                          onClick={() => handleVariantChange(variant.id)}
+                          disabled={!inStock || changingVariant}
+                          className={`w-full p-4 rounded-lg border-2 transition-all text-left flex items-center justify-between ${
+                            isSelected
+                              ? "border-[#F16D34] bg-orange-50"
+                              : inStock
+                              ? "border-gray-200 hover:border-gray-300"
+                              : "border-gray-100 bg-gray-50 opacity-60 cursor-not-allowed"
+                          }`}
+                        >
+                          <div>
+                            <p className="font-medium text-gray-900">
+                              {variant.title}
+                            </p>
+                            {options.length > 0 && (
+                              <p className="text-xs text-gray-500 mt-0.5">
+                                {options
+                                  .map((o) => `${o.name}: ${o.value}`)
+                                  .join(" • ")}
+                              </p>
+                            )}
+                            {!inStock && (
+                              <p className="text-xs text-red-500 mt-0.5">
+                                Out of stock
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-3">
+                            {variant.calculated_price && (
+                              <span className="text-sm font-bold text-gray-900">
+                                {convertToLocale({
+                                  amount:
+                                    variant.calculated_price.calculated_amount ||
+                                    0,
+                                  currency_code: cart?.currency_code || "PHP",
+                                })}
+                              </span>
+                            )}
+                            {isSelected && (
+                              <div className="w-5 h-5 rounded-full bg-[#F16D34] flex items-center justify-center">
+                                <svg
+                                  className="w-3 h-3 text-white"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={3}
+                                    d="M5 13l4 4L19 7"
+                                  />
+                                </svg>
+                              </div>
+                            )}
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-center text-gray-500 py-8">
+                    No other variants available
+                  </p>
+                )}
+              </div>
+
+              {/* Modal Footer */}
+              {changingVariant && (
+                <div className="px-6 py-4 border-t border-gray-100">
+                  <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
+                    <svg
+                      className="animate-spin h-4 w-4"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        fill="none"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                      />
+                    </svg>
+                    Updating cart...
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}

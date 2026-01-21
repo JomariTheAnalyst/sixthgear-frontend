@@ -149,7 +149,7 @@ export default function ProductActions({
   const renderOptionSelector = (option: HttpTypes.StoreProductOption) => {
     const commonProps = {
       option,
-      variants: product.variants,
+      variants: product.variants ?? undefined,
       current: options[option.id],
       updateOption: setOptionValue,
       currentSelections: options,

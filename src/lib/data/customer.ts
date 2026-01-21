@@ -19,7 +19,9 @@ export const retrieveCustomer =
   async (): Promise<HttpTypes.StoreCustomer | null> => {
     const authHeaders = await getAuthHeaders()
 
-    if (!authHeaders) return null
+    if (!authHeaders || Object.keys(authHeaders).length === 0) {
+      return null
+    }
 
     const headers = {
       ...authHeaders,
@@ -33,14 +35,17 @@ export const retrieveCustomer =
       .fetch<{ customer: HttpTypes.StoreCustomer }>(`/store/customers/me`, {
         method: "GET",
         query: {
-          fields: "*orders",
+          fields: "*addresses",
         },
         headers,
         next,
-        cache: "force-cache",
+        cache: "no-cache", // Prevent caching of customer data to ensure auth state is fresh
       })
       .then(({ customer }) => customer)
-      .catch(() => null)
+      .catch((err) => {
+        console.error("Error fetching customer:", err)
+        return null
+      })
   }
 
 export const updateCustomer = async (body: HttpTypes.StoreUpdateCustomer) => {
@@ -69,10 +74,15 @@ export async function signup(_currentState: unknown, formData: FormData) {
   }
 
   try {
+    // Register the user
     const token = await sdk.auth.register("customer", "emailpass", {
       email: customerForm.email,
       password: password,
     })
+
+    if (!token) {
+      return "Failed to register. Please try again."
+    }
 
     await setAuthToken(token as string)
 
@@ -80,28 +90,39 @@ export async function signup(_currentState: unknown, formData: FormData) {
       ...(await getAuthHeaders()),
     }
 
-    const { customer: createdCustomer } = await sdk.store.customer.create(
-      customerForm,
-      {},
-      headers
-    )
+    // Create customer profile
+    await sdk.store.customer.create(customerForm, {}, headers)
 
+    // Login to get fresh token
     const loginToken = await sdk.auth.login("customer", "emailpass", {
       email: customerForm.email,
       password,
     })
 
+    if (!loginToken) {
+      return "Registration successful but login failed. Please try logging in."
+    }
+
     await setAuthToken(loginToken as string)
 
+    // Revalidate customer cache
     const customerCacheTag = await getCacheTag("customers")
     revalidateTag(customerCacheTag)
 
-    await transferCart()
-
-    return createdCustomer
+    // Transfer any existing cart
+    try {
+      await transferCart()
+    } catch (error) {
+      // Cart transfer is not critical, continue
+      console.error("Cart transfer failed:", error)
+    }
   } catch (error: any) {
-    return error.toString()
+    console.error("Signup error:", error)
+    return error.message || error.toString()
   }
+
+  // Redirect after successful signup
+  redirect("/account")
 }
 
 export async function login(_currentState: unknown, formData: FormData) {
@@ -109,22 +130,35 @@ export async function login(_currentState: unknown, formData: FormData) {
   const password = formData.get("password") as string
 
   try {
-    await sdk.auth
-      .login("customer", "emailpass", { email, password })
-      .then(async (token) => {
-        await setAuthToken(token as string)
-        const customerCacheTag = await getCacheTag("customers")
-        revalidateTag(customerCacheTag)
-      })
+    const token = await sdk.auth.login("customer", "emailpass", {
+      email,
+      password,
+    })
+
+    if (!token) {
+      return "Invalid email or password"
+    }
+
+    await setAuthToken(token as string)
+
+    // Revalidate customer cache
+    const customerCacheTag = await getCacheTag("customers")
+    revalidateTag(customerCacheTag)
+
+    // Transfer any existing cart
+    try {
+      await transferCart()
+    } catch (error) {
+      // Cart transfer is not critical, continue
+      console.error("Cart transfer failed:", error)
+    }
   } catch (error: any) {
-    return error.toString()
+    console.error("Login error:", error)
+    return "Invalid email or password"
   }
 
-  try {
-    await transferCart()
-  } catch (error: any) {
-    return error.toString()
-  }
+  // Redirect after successful login
+  redirect("/account")
 }
 
 export async function signout(countryCode: string) {

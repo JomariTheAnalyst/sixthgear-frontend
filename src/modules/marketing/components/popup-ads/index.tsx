@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { MarketingItem, PopupFrequency } from "@/types/marketing"
+import { MarketingItem, PopupFrequency } from "../../../../types/marketing"
 import Image from "next/image"
 import Link from "next/link"
 

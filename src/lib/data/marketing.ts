@@ -1,7 +1,7 @@
 "use server"
 
 import { cookies, draftMode } from "next/headers"
-import { MarketingResponse, MarketingFetchParams } from "@/types/marketing"
+import { MarketingResponse, MarketingFetchParams } from "../../types/marketing"
 
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL || "http://localhost:9000"

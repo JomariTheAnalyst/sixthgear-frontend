@@ -15,6 +15,7 @@ const navLinks = [
   { name: "About", href: "/about" },
   { name: "Shop", href: "/store" },
   { name: "Services", href: "/services", hasDropdown: true },
+  { name: "Menu", href: "/menu" },
   { name: "Contact", href: "/contact" },
 ]
 
@@ -22,24 +23,14 @@ interface NavClientProps {
   regions: StoreRegion[]
   cart: HttpTypes.StoreCart | null
   servicesData: ServiceCategory[]
+  customer: HttpTypes.StoreCustomer | null
 }
 
-const NavClient = ({ regions, cart, servicesData }: NavClientProps) => {
+const NavClient = ({ regions, cart, servicesData, customer }: NavClientProps) => {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isServicesOpen, setIsServicesOpen] = useState(false)
   const servicesTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const pathname = usePathname()
-
-  // Check if we are on the home page
-  const isHome = pathname === "/" || pathname === "/us" || pathname === "/dk" // Adjust based on your localization pattern if needed, or better, check if path ends with / or country code
-  // Simpler check: if it's strictly the landing page.
-  // Actually, simplest is to check if we are on the homepage.
-  // The user only mentioned "leaves the hero section", implying this effect is primarily for the homepage where the hero exists.
-  // Unless the hero exists on all pages? Usually only Home.
-  // Let's assume for now this effect is global but primarily seen on home. If on other pages we don't have a dark hero, we might default to "scrolled" state immediately?
-  // User said "in the nav... make the nav once staring to leaves the hero section".
-  // Let's assume on other pages we might want the white nav always? Or keep it consistent?
-  // For now, I'll implement the scroll listener.
 
   useEffect(() => {
     const handleScroll = () => {
@@ -55,17 +46,8 @@ const NavClient = ({ regions, cart, servicesData }: NavClientProps) => {
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
-  // If not on home, maybe we always want the "scrolled" look (black text on white)?
-  // But let's stick to the scroll behavior requested.
-  // Note: if other pages have white background, white text won't be visible if we don't toggle.
-  // So for non-home pages, we might want to force `isScrolled` styling or just start with dark text.
-  // Given the request is specific to "hero section", I'll assume this specific dynamic behavior.
+  const isHomepage = pathname === "/" || /^\/[a-z]{2}$/.test(pathname)
 
-  // To be safe for other pages, let's verify if `pathname` indicates homepage.
-  // Ideally, other pages should probably have the "scrolled" style (visible header).
-  const isHomepage = pathname === "/" || /^\/[a-z]{2}$/.test(pathname) // Matches / or /us, /ph, etc.
-
-  // Dynamic classes
   const containerClasses =
     isScrolled || !isHomepage
       ? "bg-white/95 backdrop-blur-md shadow-sm border-gray-100"
@@ -85,6 +67,15 @@ const NavClient = ({ regions, cart, servicesData }: NavClientProps) => {
     isScrolled || !isHomepage
       ? "text-gray-600 hover:text-[#F16D34]"
       : "text-white hover:text-[#F16D34]"
+
+  // Helper to get initials
+  const getInitials = () => {
+    if (!customer) return ""
+    const first = customer.first_name?.charAt(0) || ""
+    const last = customer.last_name?.charAt(0) || ""
+    const initials = (first + last).toUpperCase()
+    return initials || customer.email?.charAt(0).toUpperCase() || "U"
+  }
 
   return (
     <div
@@ -378,23 +369,31 @@ const NavClient = ({ regions, cart, servicesData }: NavClientProps) => {
             {/* Account */}
             <LocalizedClientLink
               href="/account"
-              className={`p-2 transition-all duration-200 hover:scale-110 ${iconClasses}`}
+              className={`p-1 transition-all duration-200 hover:scale-105 ${iconClasses}`}
               data-testid="nav-account-link"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                <circle cx="12" cy="7" r="4" />
-              </svg>
+              {customer ? (
+                <div className="w-9 h-9 rounded-full bg-[#F16D34] flex items-center justify-center text-white font-bold text-sm tracking-widest shadow-sm ring-2 ring-white/20">
+                  {getInitials()}
+                </div>
+              ) : (
+                <div className="p-1">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
+                </div>
+              )}
             </LocalizedClientLink>
 
             {/* Cart */}

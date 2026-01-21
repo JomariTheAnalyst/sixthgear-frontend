@@ -19,38 +19,49 @@ const OrderSummary = ({ order }: OrderSummaryProps) => {
 
   return (
     <div>
-      <h2 className="text-base-semi">Order Summary</h2>
-      <div className="text-small-regular text-ui-fg-base my-2">
-        <div className="flex items-center justify-between text-base-regular text-ui-fg-base mb-2">
-          <span>Subtotal</span>
-          <span>{getAmount(order.subtotal)}</span>
+      <h2 className="text-lg font-semibold text-gray-900 mb-6">Order Summary</h2>
+      
+      <div className="space-y-3">
+        {/* Subtotal */}
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-gray-600">Subtotal</span>
+          <span className="font-medium text-gray-900">{getAmount(order.subtotal)}</span>
         </div>
-        <div className="flex flex-col gap-y-1">
-          {order.discount_total > 0 && (
-            <div className="flex items-center justify-between">
-              <span>Discount</span>
-              <span>- {getAmount(order.discount_total)}</span>
-            </div>
-          )}
-          {order.gift_card_total > 0 && (
-            <div className="flex items-center justify-between">
-              <span>Discount</span>
-              <span>- {getAmount(order.gift_card_total)}</span>
-            </div>
-          )}
-          <div className="flex items-center justify-between">
-            <span>Shipping</span>
-            <span>{getAmount(order.shipping_total)}</span>
+
+        {/* Discount */}
+        {order.discount_total > 0 && (
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-gray-600">Discount</span>
+            <span className="font-medium text-green-600">- {getAmount(order.discount_total)}</span>
           </div>
-          <div className="flex items-center justify-between">
-            <span>Taxes</span>
-            <span>{getAmount(order.tax_total)}</span>
+        )}
+
+        {/* Gift Card */}
+        {order.gift_card_total > 0 && (
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-gray-600">Gift Card</span>
+            <span className="font-medium text-green-600">- {getAmount(order.gift_card_total)}</span>
           </div>
+        )}
+
+        {/* Shipping */}
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-gray-600">Shipping</span>
+          <span className="font-medium text-gray-900">{getAmount(order.shipping_total)}</span>
         </div>
-        <div className="h-px w-full border-b border-gray-200 border-dashed my-4" />
-        <div className="flex items-center justify-between text-base-regular text-ui-fg-base mb-2">
-          <span>Total</span>
-          <span>{getAmount(order.total)}</span>
+
+        {/* Taxes */}
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-gray-600">Taxes</span>
+          <span className="font-medium text-gray-900">{getAmount(order.tax_total)}</span>
+        </div>
+
+        {/* Divider */}
+        <div className="border-t border-gray-200 pt-3 mt-3">
+          <div className="flex items-center justify-between">
+            <span className="text-base font-semibold text-gray-900">Total</span>
+            <span className="text-lg font-bold text-gray-900">{getAmount(order.total)}</span>
+          </div>
         </div>
       </div>
     </div>

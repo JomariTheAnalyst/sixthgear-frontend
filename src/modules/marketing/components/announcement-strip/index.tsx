@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { MarketingItem } from "@/types/marketing"
+import { MarketingItem } from "../../../../types/marketing"
 
 interface AnnouncementStripProps {
   item: MarketingItem | null

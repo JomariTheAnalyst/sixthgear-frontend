@@ -163,13 +163,7 @@ const AccountNav = ({
 
       {/* Desktop Navigation */}
       <div className="hidden lg:block" data-testid="account-nav">
-        <nav className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="p-4 border-b border-gray-100">
-            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
-              My Account
-            </h2>
-          </div>
-          <div className="p-2">
+        <nav className="space-y-1">
             {navItems.map((item) => {
               const isActive =
                 route === `/${countryCode}${item.href}` ||
@@ -180,42 +174,45 @@ const AccountNav = ({
                   key={item.href}
                   href={item.href}
                   className={clx(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all mb-1",
+                    "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all group",
                     isActive
-                      ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-md"
-                      : "text-gray-700 hover:bg-gray-100"
+                      ? "text-gray-900 font-medium bg-white shadow-sm border border-gray-100"
+                      : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
                   )}
                   data-testid={item.testId}
                 >
                   {item.icon}
                   <span className="font-medium">{item.label}</span>
+                  {isActive && (
+                      <div className="ml-auto w-1.5 h-1.5 rounded-full bg-orange-500" />
+                  )}
                 </LocalizedClientLink>
               )
             })}
-          </div>
-          <div className="p-2 border-t border-gray-100">
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg w-full text-gray-600 hover:bg-red-50 hover:text-red-600 transition-colors"
-              data-testid="logout-button"
-            >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                />
-              </svg>
-              <span className="font-medium">Log out</span>
-            </button>
-          </div>
+            
+            <div className="pt-4 mt-4 border-t border-gray-200/50">
+                <button
+                type="button"
+                onClick={handleLogout}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg w-full text-gray-500 hover:text-red-600 transition-colors group"
+                data-testid="logout-button"
+                >
+                <svg
+                    className="w-5 h-5 group-hover:text-red-500 transition-colors"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                    />
+                </svg>
+                <span className="font-medium">Log out</span>
+                </button>
+            </div>
         </nav>
       </div>
     </div>

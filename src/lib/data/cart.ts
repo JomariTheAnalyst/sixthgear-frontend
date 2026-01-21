@@ -217,6 +217,55 @@ export async function deleteLineItem(lineId: string) {
     .catch(medusaError)
 }
 
+export async function changeLineItemVariant({
+  lineId,
+  newVariantId,
+  quantity,
+}: {
+  lineId: string
+  newVariantId: string
+  quantity: number
+}) {
+  if (!lineId) {
+    throw new Error("Missing lineItem ID when changing variant")
+  }
+
+  if (!newVariantId) {
+    throw new Error("Missing new variant ID when changing variant")
+  }
+
+  const cartId = await getCartId()
+
+  if (!cartId) {
+    throw new Error("Missing cart ID when changing variant")
+  }
+
+  const headers = {
+    ...(await getAuthHeaders()),
+  }
+
+  // Delete the old line item
+  await sdk.store.cart.deleteLineItem(cartId, lineId, {}, headers)
+
+  // Add the new line item with the new variant
+  await sdk.store.cart.createLineItem(
+    cartId,
+    {
+      variant_id: newVariantId,
+      quantity,
+    },
+    {},
+    headers
+  )
+
+  // Revalidate caches
+  const cartCacheTag = await getCacheTag("carts")
+  revalidateTag(cartCacheTag)
+
+  const fulfillmentCacheTag = await getCacheTag("fulfillment")
+  revalidateTag(fulfillmentCacheTag)
+}
+
 export async function setShippingMethod({
   cartId,
   shippingMethodId,

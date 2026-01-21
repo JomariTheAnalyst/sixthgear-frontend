@@ -10,23 +10,21 @@ export const retrieveOrder = async (id: string) => {
     ...(await getAuthHeaders()),
   }
 
-  const next = {
-    ...(await getCacheOptions("orders")),
-  }
+  try {
+    const response = await sdk.client.fetch<HttpTypes.StoreOrderResponse>(
+      `/store/orders/${id}?fields=*fulfillments,*fulfillments.labels,*items,*items.variant,*items.product,*shipping_address,*billing_address,*shipping_methods`,
+      {
+        method: "GET",
+        headers,
+        cache: "no-store",
+      }
+    )
 
-  return sdk.client
-    .fetch<HttpTypes.StoreOrderResponse>(`/store/orders/${id}`, {
-      method: "GET",
-      query: {
-        fields:
-          "*payment_collections.payments,*items,*items.metadata,*items.variant,*items.product",
-      },
-      headers,
-      next,
-      cache: "force-cache",
-    })
-    .then(({ order }) => order)
-    .catch((err) => medusaError(err))
+    return response.order
+  } catch (err) {
+    console.error("Error retrieving order:", err)
+    throw err
+  }
 }
 
 export const listOrders = async (
@@ -36,6 +34,11 @@ export const listOrders = async (
 ) => {
   const headers = {
     ...(await getAuthHeaders()),
+  }
+
+  // Don't use auth headers if not available
+  if (!headers || Object.keys(headers).length === 0) {
+    return []
   }
 
   const next = {
@@ -54,10 +57,13 @@ export const listOrders = async (
       },
       headers,
       next,
-      cache: "force-cache",
+      cache: "default", // Use default caching behavior
     })
-    .then(({ orders }) => orders)
-    .catch((err) => medusaError(err))
+    .then(({ orders }) => orders || [])
+    .catch((err) => {
+      console.error("Error fetching orders:", err)
+      return []
+    })
 }
 
 export const createTransferRequest = async (

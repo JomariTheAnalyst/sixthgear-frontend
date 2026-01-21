@@ -1,13 +1,11 @@
 "use client"
 
-import { Heading, Text, clx } from "@medusajs/ui"
-
+import { Heading, clx } from "@medusajs/ui"
 import PaymentButton from "../payment-button"
 import { useSearchParams } from "next/navigation"
 
 const Review = ({ cart }: { cart: any }) => {
   const searchParams = useSearchParams()
-
   const isOpen = searchParams.get("step") === "review"
 
   const paidByGiftcard =
@@ -37,27 +35,27 @@ const Review = ({ cart }: { cart: any }) => {
               "text-gray-900": isOpen,
             })}
           >
-            Review & Place Order
+            Complete Order
           </Heading>
         </div>
       </div>
 
       {isOpen && previousStepsCompleted && (
         <div className="space-y-6">
-          <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-            <Text className="text-sm text-gray-600 leading-relaxed">
-              By clicking the Place Order button, you confirm that you have
-              read, understand and accept our Terms of Use, Terms of Sale and
-              Returns Policy and acknowledge that you have read Sixthgear&apos;s
-              Privacy Policy.
-            </Text>
+          <div className="p-5 bg-gray-50 border border-gray-200 rounded-lg">
+            <p className="text-sm text-gray-700 leading-relaxed">
+              By placing your order, you agree to Sixthgear&apos;s{" "}
+              <span className="font-medium text-gray-900">
+                Terms of Service
+              </span>{" "}
+              and{" "}
+              <span className="font-medium text-gray-900">Privacy Policy</span>.
+            </p>
           </div>
 
-          <PaymentButton
-            cart={cart}
-            data-testid="submit-order-button"
-            className="w-full h-14 bg-[#F16D34] hover:bg-[#d55a24] text-white font-bold uppercase tracking-wider rounded-lg transition-colors"
-          />
+          <div className="w-full">
+            <PaymentButton cart={cart} data-testid="submit-order-button" />
+          </div>
         </div>
       )}
     </div>

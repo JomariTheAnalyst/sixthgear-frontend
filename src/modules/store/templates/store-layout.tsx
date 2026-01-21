@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState, useTransition, useEffect } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { HttpTypes } from "@medusajs/types"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
@@ -29,12 +29,41 @@ export default function StoreLayout({
   categories = [],
 }: StoreLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false)
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
+
+  // Lock body scroll when mobile drawer is open
+  useEffect(() => {
+    if (isMobileDrawerOpen) {
+      document.body.style.overflow = "hidden"
+    } else {
+      document.body.style.overflow = ""
+    }
+    return () => {
+      document.body.style.overflow = ""
+    }
+  }, [isMobileDrawerOpen])
+
+  // Close drawer on ESC key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isMobileDrawerOpen) {
+        setIsMobileDrawerOpen(false)
+      }
+    }
+    document.addEventListener("keydown", handleEscape)
+    return () => document.removeEventListener("keydown", handleEscape)
+  }, [isMobileDrawerOpen])
+
+  // Auto-close mobile drawer when URL changes (filter applied)
+  useEffect(() => {
+    setIsMobileDrawerOpen(false)
+  }, [searchParams])
 
   // Handle Sort Change with transition
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -52,10 +81,19 @@ export default function StoreLayout({
       <div className="border-b border-gray-200 sticky top-20 z-30 bg-white shadow-sm">
         <div className="max-w-[1440px] mx-auto px-4 md:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-6">
-            {/* Filter Toggle */}
+            {/* Filter Toggle - Desktop toggles sidebar, Mobile opens drawer */}
             <button
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              onClick={() => {
+                // Mobile: open drawer
+                if (window.innerWidth < 768) {
+                  setIsMobileDrawerOpen(true)
+                } else {
+                  // Desktop: toggle sidebar
+                  setIsSidebarOpen(!isSidebarOpen)
+                }
+              }}
               className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-gray-900 hover:text-[#F16D34] transition-colors"
+              aria-label="Toggle filters"
             >
               <span className="text-lg">
                 <svg
@@ -164,10 +202,154 @@ export default function StoreLayout({
         </div>
       </div>
 
-      <div className="flex max-w-[1440px] mx-auto w-full flex-1">
-        {/* Left Sidebar */}
+      {/* Mobile Filter Drawer Overlay */}
+      {isMobileDrawerOpen && (
         <div
-          className={`shrink-0 border-r border-gray-100 bg-white transition-all duration-300 ease-in-out overflow-hidden ${
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={() => setIsMobileDrawerOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Mobile Filter Drawer */}
+      <div
+        className={`fixed top-0 left-0 h-full w-[85%] max-w-[320px] bg-white z-50 md:hidden transform transition-transform duration-300 ease-out ${
+          isMobileDrawerOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Filter products"
+      >
+        {/* Drawer Header */}
+        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-200">
+          <h2 className="text-lg font-bold text-gray-900 uppercase tracking-wide">
+            Filters
+          </h2>
+          <button
+            onClick={() => setIsMobileDrawerOpen(false)}
+            className="p-2 -mr-2 text-gray-500 hover:text-gray-900 transition-colors"
+            aria-label="Close filters"
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+
+        {/* Drawer Content */}
+        <div className="p-6 space-y-8 overflow-y-auto h-[calc(100%-73px)] custom-scrollbar">
+          {/* Search */}
+          <div>
+            <h3 className="font-bold text-gray-900 mb-4 uppercase tracking-wide text-sm">
+              Search
+            </h3>
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search products..."
+                className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F16D34] focus:border-[#F16D34]"
+              />
+              <svg
+                className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            </div>
+          </div>
+
+          {/* Shop by Brand */}
+          <div>
+            <h3 className="font-bold text-gray-900 mb-4 uppercase tracking-wide text-sm">
+              Shop by Brand
+            </h3>
+            <div className="space-y-3 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
+              {mockBrands.map((brand) => (
+                <label
+                  key={brand}
+                  className="flex items-center gap-3 cursor-pointer group"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    setSelectedBrand(selectedBrand === brand ? null : brand)
+                  }}
+                >
+                  <div className="relative flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={selectedBrand === brand}
+                      readOnly
+                      className="peer appearance-none w-5 h-5 border border-gray-300 rounded-full checked:bg-[#F16D34] checked:border-transparent transition-all"
+                    />
+                    <svg
+                      className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 text-white opacity-0 peer-checked:opacity-100 pointer-events-none"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                  </div>
+                  <span
+                    className={`text-sm transition-colors ${
+                      selectedBrand === brand
+                        ? "text-gray-900 font-medium"
+                        : "text-gray-600 group-hover:text-gray-900"
+                    }`}
+                  >
+                    {brand}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Categories - Real data from Medusa */}
+          <StoreFilters categories={categories} />
+
+          {/* Size Mock */}
+          <div>
+            <h3 className="font-bold text-gray-900 mb-4 uppercase tracking-wide text-sm">
+              Size
+            </h3>
+            <div className="grid grid-cols-3 gap-2">
+              {["XS", "S", "M", "L", "XL", "2XL"].map((size) => (
+                <button
+                  key={size}
+                  className="border border-gray-200 py-2.5 text-xs font-semibold text-gray-600 hover:border-[#F16D34] hover:text-[#F16D34] transition-colors rounded"
+                >
+                  {size}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex max-w-[1440px] mx-auto w-full flex-1">
+        {/* Desktop Left Sidebar - Hidden on mobile */}
+        <div
+          className={`hidden md:block shrink-0 border-r border-gray-100 bg-white transition-all duration-300 ease-in-out overflow-hidden ${
             isSidebarOpen ? "w-[280px] opacity-100" : "w-0 opacity-0"
           }`}
         >

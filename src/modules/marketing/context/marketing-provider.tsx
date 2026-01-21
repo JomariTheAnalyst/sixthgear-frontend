@@ -1,7 +1,7 @@
 "use client"
 
 import { createContext, useContext, ReactNode } from "react"
-import { MarketingResponse, MarketingItem } from "@/types/marketing"
+import { MarketingResponse, MarketingItem } from "../../../types/marketing"
 import AnnouncementStrip from "../components/announcement-strip"
 import PopupAds from "../components/popup-ads"
 

@@ -1,6 +1,5 @@
 "use client"
 
-import { XMark } from "@medusajs/icons"
 import { HttpTypes } from "@medusajs/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import Help from "@modules/order/components/help"
@@ -18,26 +17,47 @@ const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
   order,
 }) => {
   return (
-    <div className="flex flex-col justify-center gap-y-4">
-      <div className="flex gap-2 justify-between items-center">
-        <h1 className="text-2xl-semi">Order details</h1>
+    <div className="max-w-5xl mx-auto">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">Order Details</h1>
         <LocalizedClientLink
           href="/account/orders"
-          className="flex gap-2 items-center text-ui-fg-subtle hover:text-ui-fg-base"
+          className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors"
           data-testid="back-to-overview-button"
         >
-          <XMark /> Back to overview
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+          Back to overview
         </LocalizedClientLink>
       </div>
-      <div
-        className="flex flex-col gap-4 h-full bg-white w-full"
-        data-testid="order-details-container"
-      >
+
+      {/* Main Content */}
+      <div className="space-y-8">
+        {/* Order Info */}
         <OrderDetails order={order} showStatus />
-        <Items order={order} />
-        <ShippingDetails order={order} />
-        <OrderSummary order={order} />
-        <Help />
+
+        {/* Items */}
+        <div className="bg-white rounded-lg border border-gray-200/60 overflow-hidden">
+          <Items order={order} />
+        </div>
+
+        {/* Two Column Layout for Shipping and Summary */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Shipping Details */}
+          <ShippingDetails order={order} />
+
+          {/* Order Summary */}
+          <div className="bg-white rounded-lg border border-gray-200/60 p-6 h-fit">
+            <OrderSummary order={order} />
+          </div>
+        </div>
+
+        {/* Help Section */}
+        <div className="bg-white rounded-lg border border-gray-200/60 p-6">
+          <Help />
+        </div>
       </div>
     </div>
   )

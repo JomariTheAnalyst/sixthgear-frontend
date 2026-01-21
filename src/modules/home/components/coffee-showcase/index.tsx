@@ -194,27 +194,29 @@ export default function CoffeeShowcase() {
               Sixthgear.
             </p>
             <button className="bg-[#F16D34] hover:bg-[#ff7a3d] text-white font-bold px-8 md:px-10 py-3 md:py-4 rounded-none transition-all duration-300 inline-flex items-center gap-2 md:gap-3 group text-base md:text-lg">
-              <span
+              <a
+                href="/menu"
+                className="flex items-center gap-2 md:gap-3"
                 style={{
                   fontFamily: "Inter Display, sans-serif",
                   fontWeight: 500,
                 }}
               >
-                View Full Menu
-              </span>
-              <svg
-                className="w-5 h-5 md:w-6 md:h-6 transform group-hover:translate-x-1 transition-transform"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M17 8l4 4m0 0l-4 4m4-4H3"
-                />
-              </svg>
+                <span>View Full Menu</span>
+                <svg
+                  className="w-5 h-5 md:w-6 md:h-6 transform group-hover:translate-x-1 transition-transform"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 8l4 4m0 0l-4 4m4-4H3"
+                  />
+                </svg>
+              </a>
             </button>
           </div>
         </div>

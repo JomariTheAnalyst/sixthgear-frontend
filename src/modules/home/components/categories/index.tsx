@@ -54,7 +54,7 @@ function CategoryCard({
 }) {
   return (
     <LocalizedClientLink
-      href={`/categories/${slug}`}
+      href={`/store?category=${slug}`}
       className="group block"
       style={{ animationDelay: `${index * 100}ms` }}
     >
