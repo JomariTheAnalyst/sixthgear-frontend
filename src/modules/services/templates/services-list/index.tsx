@@ -7,10 +7,13 @@
 
 import Image from "next/image"
 import Link from "next/link"
+import { useParams } from "next/navigation"
 import { servicesData } from "@lib/services-data"
 import CTABanner from "@modules/home/components/cta-banner"
 
 export default function ServicesListTemplate() {
+  const params = useParams()
+  const countryCode = params?.countryCode as string
   return (
     <>
       {/* Hero Section */}
@@ -66,7 +69,7 @@ export default function ServicesListTemplate() {
               return (
                 <Link
                   key={service.id}
-                  href={`/services/${service.slug}`}
+                  href={`/${countryCode}/services/${service.slug}`}
                   className="group block"
                 >
                   <div

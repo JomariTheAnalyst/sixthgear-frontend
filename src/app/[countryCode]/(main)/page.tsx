@@ -24,6 +24,7 @@ import {
 import { getRegion } from "@lib/data/regions"
 import { getMarketingForPath } from "@lib/data/marketing"
 import { BannerSlot, PopupAds } from "@modules/marketing"
+import { getHeroContent } from "@lib/strapi/home"
 
 // Force dynamic rendering for real-time sale price updates
 export const dynamic = "force-dynamic"
@@ -68,10 +69,19 @@ export default async function Home(props: {
   // Fetch marketing content for homepage
   const marketing = await getMarketingForPath("/")
 
+  // Fetch hero content from Strapi CMS (with fallback to hardcoded values)
+  const heroContent = await getHeroContent()
+
   return (
     <>
       {/* Hero Section */}
-      <Hero />
+      <Hero
+        trustBadge={heroContent?.trustBadge}
+        title={heroContent?.title}
+        description={heroContent?.description}
+        primaryCta={heroContent?.primaryCta}
+        secondaryCta={heroContent?.secondaryCta}
+      />
 
       {/* Top Banner Slot */}
       <BannerSlot

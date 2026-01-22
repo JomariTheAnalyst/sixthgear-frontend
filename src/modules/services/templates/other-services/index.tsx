@@ -7,6 +7,7 @@
 
 import Image from "next/image"
 import Link from "next/link"
+import { useParams } from "next/navigation"
 import { ServiceCategory } from "@lib/services-data"
 
 interface OtherServicesProps {
@@ -18,6 +19,9 @@ export default function OtherServices({
   services,
   currentSlug,
 }: OtherServicesProps) {
+  const params = useParams()
+  const countryCode = params?.countryCode as string
+
   const otherServices = services
     .filter((s) => s.slug !== currentSlug)
     .slice(0, 4)
@@ -48,7 +52,7 @@ export default function OtherServices({
           {otherServices.map((service) => (
             <Link
               key={service.id}
-              href={`/services/${service.slug}`}
+              href={`/${countryCode}/services/${service.slug}`}
               className="group relative aspect-[3/4] rounded-2xl overflow-hidden"
             >
               {/* Background Image */}

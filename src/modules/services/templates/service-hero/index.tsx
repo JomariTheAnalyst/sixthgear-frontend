@@ -7,6 +7,7 @@
 
 import Image from "next/image"
 import Link from "next/link"
+import { useParams } from "next/navigation"
 import { ServiceCategory } from "@lib/services-data"
 
 interface ServiceHeroProps {
@@ -14,6 +15,9 @@ interface ServiceHeroProps {
 }
 
 export default function ServiceHero({ service }: ServiceHeroProps) {
+  const params = useParams()
+  const countryCode = params?.countryCode as string
+
   return (
     <section className="relative min-h-[50vh] md:min-h-[60vh] flex items-center justify-center overflow-hidden">
       {/* Background Image */}
@@ -33,14 +37,14 @@ export default function ServiceHero({ service }: ServiceHeroProps) {
         {/* Breadcrumb */}
         <nav className="flex items-center justify-center gap-2 mb-6 text-sm">
           <Link
-            href="/"
+            href={`/${countryCode}`}
             className="text-white/60 hover:text-white transition-colors"
           >
             Home
           </Link>
           <span className="text-white/40">/</span>
           <Link
-            href="/services"
+            href={`/${countryCode}/services`}
             className="text-white/60 hover:text-white transition-colors"
           >
             Services

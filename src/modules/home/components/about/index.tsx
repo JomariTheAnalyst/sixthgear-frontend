@@ -49,31 +49,6 @@ const AboutSection = () => {
                     </svg>
                 </div>
             </div>
-
-            {/* Happy Customer Card */}
-            <div className="absolute bottom-6 right-[-20%] md:right-[-10%] lg:right-[-40px] translate-y-1/2 md:translate-y-0 bg-white rounded-xl p-3 md:p-4 shadow-xl z-40 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-1000">
-                <div className="flex -space-x-3">
-                    {[1, 2, 3].map((i) => (
-                        <div key={i} className={`w-8 h-8 md:w-10 md:h-10 rounded-full border-2 border-white flex items-center justify-center bg-gray-${100 + i*100} overflow-hidden`}>
-                             <Image 
-                                src={`https://api.dicebear.com/7.x/avataaars/png?seed=${i * 85}`} 
-                                alt="avatar" 
-                                width={40} 
-                                height={40} 
-                             />
-                        </div>
-                    ))}
-                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 border-white bg-[#F97316] flex items-center justify-center text-white text-xs font-bold">
-                        +
-                    </div>
-                </div>
-                <div>
-                    <p className="text-[#1a1a1a] font-bold text-xs md:text-sm">Happy Customer</p>
-                    <div className="flex text-[#F97316] text-[10px] md:text-xs">
-                        {"★".repeat(5)}
-                    </div>
-                </div>
-            </div>
           </div>
 
         </div>

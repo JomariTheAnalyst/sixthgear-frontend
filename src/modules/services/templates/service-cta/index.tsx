@@ -6,8 +6,12 @@
  */
 
 import Link from "next/link"
+import { useParams } from "next/navigation"
 
 export default function ServiceCTA() {
+  const params = useParams()
+  const countryCode = params?.countryCode as string
+
   return (
     <section className="bg-[#1a1a1a] py-16 md:py-24 relative overflow-hidden">
       {/* Decorative Elements */}
@@ -32,7 +36,7 @@ export default function ServiceCTA() {
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link
-            href="/contact"
+            href={`/${countryCode}/contact`}
             className="inline-flex items-center gap-3 px-8 py-4 bg-[#F16D34] text-white font-semibold uppercase tracking-wider rounded-full transition-all duration-300 hover:bg-white hover:text-[#1a1a1a] hover:scale-105"
             style={{ fontFamily: "Inter Display, sans-serif" }}
           >
@@ -53,7 +57,7 @@ export default function ServiceCTA() {
           </Link>
 
           <Link
-            href="/services"
+            href={`/${countryCode}/services`}
             className="inline-flex items-center gap-3 px-8 py-4 bg-transparent text-white font-semibold uppercase tracking-wider rounded-full border-2 border-white/30 transition-all duration-300 hover:bg-white hover:text-[#1a1a1a] hover:border-white"
             style={{ fontFamily: "Inter Display, sans-serif" }}
           >

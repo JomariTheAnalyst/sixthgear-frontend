@@ -3,7 +3,29 @@
 import Image from "next/image"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
-const Hero = () => {
+interface HeroProps {
+  trustBadge?: string
+  title?: string
+  description?: string
+  primaryCta?: {
+    text: string
+    link: string
+  }
+  secondaryCta?: {
+    text: string
+    link: string
+  }
+}
+
+const Hero = ({
+  trustBadge = "Trusted by 500+ Riders",
+  title = "Best Bike\nRepair & Service",
+  description = "Professional servicing, repairs, detailing & performance upgrades. Trusted by riders for precision and care.",
+  primaryCta = { text: "More About Us", link: "/about" },
+  secondaryCta = { text: "View Services", link: "/services" },
+}: HeroProps) => {
+  // Split title by newline for rendering
+  const titleLines = title.split("\n")
   return (
     <div className="relative w-full min-h-screen bg-[#0a0a0a] overflow-hidden flex flex-col">
       {/* Background Image - Different positioning for mobile */}
@@ -28,39 +50,45 @@ const Hero = () => {
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full mb-6 animate-in fade-in slide-in-from-top duration-700">
             <span className="w-2 h-2 bg-[#F16D34] rounded-full animate-pulse" />
             <span className="text-white/80 text-xs sm:text-sm font-medium tracking-wide">
-              Trusted by 500+ Riders
+              {trustBadge}
             </span>
           </div>
 
           {/* Main Heading - Improved typography */}
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-[1.15] mb-5 animate-in fade-in slide-in-from-bottom duration-700 delay-100">
-            <span className="text-white">Best Bike</span>
-            <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#B88746] via-[#F16D34] to-[#B88746]">
-              Repair & Service
-            </span>
+            {titleLines.map((line, index) => (
+              <span key={index}>
+                {index === 0 ? (
+                  <span className="text-white">{line}</span>
+                ) : (
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#B88746] via-[#F16D34] to-[#B88746]">
+                    {line}
+                  </span>
+                )}
+                {index < titleLines.length - 1 && <br />}
+              </span>
+            ))}
           </h1>
 
           {/* Subtext - More readable on mobile */}
           <p className="text-gray-400 text-sm sm:text-base md:text-lg max-w-md leading-relaxed mb-8 animate-in fade-in slide-in-from-bottom duration-700 delay-200">
-            Professional servicing, repairs, detailing & performance upgrades.
-            Trusted by riders for precision and care.
+            {description}
           </p>
 
           {/* CTA Buttons - Stacked on mobile, side by side on tablet */}
           <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 w-full sm:w-auto mb-8 sm:mb-12 animate-in fade-in slide-in-from-bottom duration-700 delay-300">
             <LocalizedClientLink
-              href="/about"
+              href={primaryCta.link}
               className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-[#B88746] to-[#F16D34] text-white font-bold rounded-xl text-center shadow-lg shadow-orange-500/20 hover:shadow-orange-500/40 transition-all active:scale-[0.98]"
             >
-              More About Us
+              {primaryCta.text}
             </LocalizedClientLink>
 
             <LocalizedClientLink
-              href="/services"
+              href={secondaryCta.link}
               className="w-full sm:w-auto px-8 py-4 bg-white/5 backdrop-blur-sm border border-white/20 text-white font-bold rounded-xl text-center hover:bg-white/10 transition-all active:scale-[0.98]"
             >
-              View Services
+              {secondaryCta.text}
             </LocalizedClientLink>
           </div>
 
@@ -163,39 +191,45 @@ const Hero = () => {
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full animate-in fade-in slide-in-from-right duration-700">
               <span className="w-2 h-2 bg-[#F16D34] rounded-full animate-pulse" />
               <span className="text-white/80 text-sm font-medium tracking-wide">
-                Trusted by 500+ Riders
+                {trustBadge}
               </span>
             </div>
 
             {/* Heading */}
             <h1 className="text-5xl xl:text-6xl font-bold leading-[1.1] animate-in slide-in-from-right duration-1000 delay-100 fade-in">
-              <span className="text-white">Best Bike</span>
-              <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-br from-[#B88746] via-[#F16D34] to-[#B88746]">
-                Repair & Maintenance Services
-              </span>
+              {titleLines.map((line, index) => (
+                <span key={index}>
+                  {index === 0 ? (
+                    <span className="text-white">{line}</span>
+                  ) : (
+                    <span className="text-transparent bg-clip-text bg-gradient-to-br from-[#B88746] via-[#F16D34] to-[#B88746]">
+                      {line}
+                    </span>
+                  )}
+                  {index < titleLines.length - 1 && <br />}
+                </span>
+              ))}
             </h1>
 
             {/* Subtext */}
             <p className="text-gray-400 text-lg xl:text-xl max-w-lg leading-relaxed animate-in slide-in-from-right duration-1000 delay-200 fade-in">
-              Professional two-wheeler servicing, repairs, detailing &
-              performance upgrades. Trusted by riders for precision and care.
+              {description}
             </p>
 
             {/* CTA Buttons */}
             <div className="flex flex-wrap items-center gap-4 mt-4 animate-in slide-in-from-right duration-1000 delay-300 fade-in">
               <LocalizedClientLink
-                href="/about"
+                href={primaryCta.link}
                 className="px-8 py-4 bg-gradient-to-r from-[#B88746] to-[#F16D34] text-white font-bold rounded-xl hover:shadow-[0_0_30px_rgba(241,109,52,0.4)] transition-all transform hover:-translate-y-1"
               >
-                More About Us
+                {primaryCta.text}
               </LocalizedClientLink>
 
               <LocalizedClientLink
-                href="/services"
+                href={secondaryCta.link}
                 className="px-8 py-4 bg-white/5 backdrop-blur-sm border border-white/20 text-white font-bold rounded-xl hover:bg-white/10 hover:border-white/40 transition-all"
               >
-                View All Services
+                {secondaryCta.text}
               </LocalizedClientLink>
             </div>
           </div>
