@@ -71,19 +71,18 @@ const nextConfig = {
     
     return [
       {
-        // SECURITY: Allow ONLY the dedicated /preview page to be embedded by Strapi Cloud
-        // This keeps the rest of the site protected from iframe embedding
-        source: "/preview",
+        // CRITICAL: Allow ONLY /ph/preview (and other locale variants) to be embedded by Strapi Cloud
+        // Matches: /ph/preview, /us/preview, /sg/preview, /my/preview
+        source: "/:countryCode(ph|us|sg|my)/preview",
         headers: [
           {
             key: "Content-Security-Policy",
             value: `frame-ancestors 'self' ${strapiCloudDomain} http://localhost:1337`,
           },
-          // Do NOT set X-Frame-Options for /preview (CSP frame-ancestors takes precedence)
         ],
       },
       {
-        // Allow Strapi Cloud to embed the preview API route (redirect endpoint)
+        // Allow Strapi Cloud to embed the preview API route
         source: "/api/preview",
         headers: [
           {
@@ -93,17 +92,12 @@ const nextConfig = {
         ],
       },
       {
-        // SECURITY: Protect all other routes from iframe embedding
-        // This applies to homepage, product pages, checkout, etc.
-        source: "/:path*",
+        // Allow exit-preview API route
+        source: "/api/exit-preview",
         headers: [
           {
-            key: "X-Frame-Options",
-            value: "SAMEORIGIN", // Only allow same-origin embedding
-          },
-          {
             key: "Content-Security-Policy",
-            value: "frame-ancestors 'self'", // Only allow same-origin embedding
+            value: `frame-ancestors 'self' ${strapiCloudDomain} http://localhost:1337`,
           },
         ],
       },

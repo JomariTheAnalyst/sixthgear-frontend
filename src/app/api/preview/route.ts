@@ -81,11 +81,13 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  console.log("[Preview] Redirecting to dedicated preview page: /preview")
+  console.log(
+    "[Preview] Redirecting to dedicated preview page: /{countryCode}/preview"
+  )
 
-  // Redirect to the dedicated preview page (not the main site)
+  // Redirect to the dedicated preview page with country code
   // This ensures the preview is embeddable in Strapi's iframe
-  redirect("/preview")
+  redirect(`/${locale || "ph"}/preview`)
 }
 
 /**

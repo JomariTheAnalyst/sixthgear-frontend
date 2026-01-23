@@ -133,6 +133,37 @@ export async function middleware(request: NextRequest) {
   try {
     const pathname = request.nextUrl.pathname
 
+    // CRITICAL: Skip middleware for preview routes with country codes
+    // Allow /ph/preview, /us/preview, /sg/preview, /my/preview
+    if (
+      pathname.match(/^\/(ph|us|sg|my)\/preview\/?$/) ||
+      pathname.startsWith("/api/preview") ||
+      pathname.startsWith("/api/exit-preview")
+    ) {
+      console.log("[Middleware] Skipping preview route:", pathname)
+
+      const response = NextResponse.next()
+
+      // For preview routes, set CSP to allow Strapi Cloud iframe embedding
+      if (pathname.match(/^\/(ph|us|sg|my)\/preview\/?$/)) {
+        const strapiCloudDomain =
+          "https://rational-peace-7a8493cc74.strapiapp.com"
+
+        // CRITICAL: Allow iframe embedding ONLY from Strapi Cloud
+        response.headers.set(
+          "Content-Security-Policy",
+          `frame-ancestors 'self' ${strapiCloudDomain} http://localhost:1337`
+        )
+
+        // Do NOT set X-Frame-Options for preview routes
+        console.log(
+          "[Middleware] Set CSP for preview route to allow Strapi Cloud iframe"
+        )
+      }
+
+      return response
+    }
+
     // Skip static assets and API routes
     if (
       pathname.startsWith("/_next/") ||
