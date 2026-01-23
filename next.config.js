@@ -65,6 +65,42 @@ const nextConfig = {
         : []),
     ],
   },
+  async headers() {
+    // Strapi Cloud domain for preview iframe embedding
+    const strapiCloudDomain = "https://rational-peace-7a8493cc74.strapiapp.com"
+    
+    return [
+      {
+        // Allow Strapi Cloud to embed the preview API route
+        source: "/api/preview",
+        headers: [
+          {
+            key: "Content-Security-Policy",
+            value: `frame-ancestors 'self' ${strapiCloudDomain} http://localhost:1337`,
+          },
+          {
+            key: "X-Frame-Options",
+            value: "ALLOWALL", // Override any restrictive X-Frame-Options
+          },
+        ],
+      },
+      {
+        // Allow Strapi Cloud to embed all pages when in preview mode
+        // This covers the redirect destination after /api/preview
+        source: "/:countryCode(ph|us|sg|my)*",
+        headers: [
+          {
+            key: "Content-Security-Policy",
+            value: `frame-ancestors 'self' ${strapiCloudDomain} http://localhost:1337`,
+          },
+          {
+            key: "X-Frame-Options",
+            value: "ALLOWALL",
+          },
+        ],
+      },
+    ]
+  },
 }
 
 module.exports = nextConfig

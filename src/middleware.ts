@@ -161,19 +161,6 @@ export async function middleware(request: NextRequest) {
         })
       }
 
-      // Add CSP headers to allow iframe embedding from Strapi
-      const strapiUrl = process.env.STRAPI_URL || "http://localhost:1337"
-      // Extract domain from Strapi URL for CSP
-      const strapiDomain = strapiUrl.replace(/^https?:\/\//, "").split("/")[0]
-      response.headers.set(
-        "Content-Security-Policy",
-        `frame-ancestors 'self' https://${strapiDomain} http://localhost:1337`
-      )
-      response.headers.set(
-        "X-Frame-Options",
-        "ALLOW-FROM https://${strapiDomain}"
-      )
-
       return response
     }
 
@@ -216,19 +203,6 @@ export async function middleware(request: NextRequest) {
         sameSite: "lax",
       })
     }
-
-    // Add CSP headers to allow iframe embedding from Strapi
-    const strapiUrl = process.env.STRAPI_URL || "http://localhost:1337"
-    // Extract domain from Strapi URL for CSP
-    const strapiDomain = strapiUrl.replace(/^https?:\/\//, "").split("/")[0]
-    response.headers.set(
-      "Content-Security-Policy",
-      `frame-ancestors 'self' https://${strapiDomain} http://localhost:1337`
-    )
-    response.headers.set(
-      "X-Frame-Options",
-      "ALLOW-FROM https://${strapiDomain}"
-    )
 
     return response
   } catch (error) {
