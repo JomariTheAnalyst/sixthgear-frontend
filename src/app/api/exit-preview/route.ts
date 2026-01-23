@@ -1,23 +1,21 @@
-import { draftMode, cookies } from "next/headers"
+import { draftMode } from "next/headers"
 import { redirect } from "next/navigation"
-import { NextRequest } from "next/server"
 
 /**
- * GET /api/exit-preview
- * Disable draft mode and clear preview cookies
+ * Exit Preview API Route
+ *
+ * Disables Next.js Draft Mode and redirects to the homepage.
+ * Can be called manually or via a button in the preview UI.
  */
-export async function GET(request: NextRequest) {
-  const searchParams = request.nextUrl.searchParams
-  const redirectPath = searchParams.get("redirect") || "/"
+export async function GET() {
+  console.log("[Preview] Disabling draft mode")
 
-  // Disable draft mode
+  // Disable Draft Mode (await in Next.js 15+)
   const draft = await draftMode()
   draft.disable()
 
-  // Clear preview token cookie
-  const cookieStore = await cookies()
-  cookieStore.delete("marketing_preview_token")
+  console.log("[Preview] Draft mode disabled successfully")
 
-  // Redirect to home or specified path
-  redirect(redirectPath)
+  // Redirect to homepage
+  redirect("/")
 }

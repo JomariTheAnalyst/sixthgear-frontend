@@ -8,8 +8,25 @@
  * Desktop: 3-column grid
  */
 
-// Featured coffee drinks data
-const featuredDrinks = [
+interface CoffeeItem {
+  id: number
+  name: string
+  description: string
+  image: string | null
+}
+
+interface CoffeeShowcaseProps {
+  mainHeadingLine1?: string
+  highlightedWord?: string
+  mainHeadingLine2?: string
+  descriptionText?: string
+  buttonText?: string
+  buttonLink?: string
+  coffeeItems?: CoffeeItem[]
+}
+
+// Fallback coffee drinks data
+const defaultFeaturedDrinks: CoffeeItem[] = [
   {
     id: 1,
     name: "Iced Hazelnut Latte",
@@ -32,7 +49,27 @@ const featuredDrinks = [
   },
 ]
 
-export default function CoffeeShowcase() {
+export default function CoffeeShowcase({
+  mainHeadingLine1,
+  highlightedWord,
+  mainHeadingLine2,
+  descriptionText,
+  buttonText,
+  buttonLink,
+  coffeeItems,
+}: CoffeeShowcaseProps) {
+  // Use Strapi content if provided, otherwise fall back to hardcoded
+  const content = {
+    headingLine1: mainHeadingLine1 || "Sixthgear",
+    highlightedWord: highlightedWord || " fuels more than rides.",
+    headingLine2: mainHeadingLine2 || "We serve coffee too.",
+    description:
+      descriptionText ||
+      "More than a pit stop it's where riders refuel, relax, and reconnect. Handcrafted brews served with passion, right here at Sixthgear.",
+    ctaText: buttonText || "View Full Menu",
+    ctaLink: buttonLink || "/menu",
+    drinks: coffeeItems || defaultFeaturedDrinks,
+  }
   return (
     <section className="relative">
       {/* Top Paper Cut */}
@@ -53,10 +90,10 @@ export default function CoffeeShowcase() {
               className="text-3xl md:text-5xl lg:text-7xl xl:text-8xl leading-tight"
               style={{ fontFamily: "Tanker, sans-serif" }}
             >
-              <span className="text-[#F16D34]">Sixthgear</span>
-              <span className="text-white"> fuels more than rides.</span>
+              <span className="text-[#F16D34]">{content.headingLine1}</span>
+              <span className="text-white">{content.highlightedWord}</span>
               <br />
-              <span className="text-amber-400">We serve coffee too.</span>
+              <span className="text-amber-400">{content.headingLine2}</span>
             </h2>
           </div>
 
@@ -70,7 +107,7 @@ export default function CoffeeShowcase() {
                 WebkitOverflowScrolling: "touch",
               }}
             >
-              {featuredDrinks.map((drink) => (
+              {content.drinks.map((drink) => (
                 <div
                   key={drink.id}
                   className="group relative flex-shrink-0 w-[75vw] sm:w-[55vw] md:w-[45vw] snap-center"
@@ -80,7 +117,9 @@ export default function CoffeeShowcase() {
                     {/* Image Container */}
                     <div className="relative aspect-[2/3] bg-gradient-to-b from-gray-50 to-gray-100">
                       <img
-                        src={drink.image}
+                        src={
+                          drink.image || "/images/firstgear-coffee/hazelnut.png"
+                        }
                         alt={drink.name}
                         className="w-full h-full object-cover"
                       />
@@ -144,14 +183,16 @@ export default function CoffeeShowcase() {
 
           {/* Desktop: Grid Layout */}
           <div className="hidden lg:grid lg:grid-cols-3 gap-8 lg:gap-10">
-            {featuredDrinks.map((drink) => (
+            {content.drinks.map((drink) => (
               <div key={drink.id} className="group relative">
                 {/* Card - Large & Dominating */}
                 <div className="bg-[#F5F5F0] rounded-3xl overflow-hidden transition-all duration-300 group-hover:shadow-2xl group-hover:shadow-amber-500/20 group-hover:-translate-y-3">
                   {/* Image Container - Dominating Size */}
                   <div className="relative aspect-[2/3] bg-gradient-to-b from-gray-50 to-gray-100">
                     <img
-                      src={drink.image}
+                      src={
+                        drink.image || "/images/firstgear-coffee/hazelnut.png"
+                      }
                       alt={drink.name}
                       className="w-full h-full object-cover"
                     />
@@ -189,20 +230,18 @@ export default function CoffeeShowcase() {
                 fontWeight: 500,
               }}
             >
-              More than a pit stop it's where riders refuel, relax, and
-              reconnect. Handcrafted brews served with passion, right here at
-              Sixthgear.
+              {content.description}
             </p>
             <button className="bg-[#F16D34] hover:bg-[#ff7a3d] text-white font-bold px-8 md:px-10 py-3 md:py-4 rounded-none transition-all duration-300 inline-flex items-center gap-2 md:gap-3 group text-base md:text-lg">
               <a
-                href="/menu"
+                href={content.ctaLink}
                 className="flex items-center gap-2 md:gap-3"
                 style={{
                   fontFamily: "Inter Display, sans-serif",
                   fontWeight: 500,
                 }}
               >
-                <span>View Full Menu</span>
+                <span>{content.ctaText}</span>
                 <svg
                   className="w-5 h-5 md:w-6 md:h-6 transform group-hover:translate-x-1 transition-transform"
                   fill="none"

@@ -5,16 +5,55 @@ import Image from "next/image"
 import Link from "next/link"
 import { servicesData } from "@lib/services-data"
 
-// Map service categories to display cards with images
-const serviceCards = servicesData.map((service) => ({
-  title: service.shortTitle,
-  description: service.description,
-  image: service.image,
-  slug: service.slug,
-}))
+interface ServiceCard {
+  id?: number
+  title: string
+  description: string
+  image: string
+  slug?: string
+}
 
-export default function OurServices() {
+interface OurServicesProps {
+  sectionTitle?: string
+  sectionDescription?: string
+  services?: Array<{
+    id: number
+    title: string
+    description: string
+    image: string | null
+  }>
+}
+
+export default function OurServices({
+  sectionTitle,
+  sectionDescription,
+  services,
+}: OurServicesProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+
+  // Use Strapi content if provided, otherwise fall back to hardcoded
+  const content = {
+    title: sectionTitle || "Motorcycle Services",
+    description: sectionDescription || "Bike Repair & Maintenance Services",
+    cards: services
+      ? services.map((service) => ({
+          id: service.id,
+          title: service.title,
+          description: service.description,
+          image: service.image || "/images/services/default.jpg",
+        }))
+      : servicesData.map((service) => ({
+          title: service.shortTitle,
+          description: service.description,
+          image: service.image,
+          slug: service.slug,
+        })),
+  }
+
+  // Don't render if no services
+  if (content.cards.length === 0) {
+    return null
+  }
 
   const scroll = (direction: "left" | "right") => {
     if (scrollContainerRef.current) {
@@ -36,10 +75,10 @@ export default function OurServices() {
               className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-2"
               style={{ fontFamily: "Tanker, sans-serif" }}
             >
-              Motorcycle Services
+              {content.title}
             </h2>
             <p className="text-lg md:text-xl lg:text-2xl text-gray-500 font-medium">
-              Bike Repair & Maintenance Services
+              {content.description}
             </p>
           </div>
 
@@ -91,39 +130,57 @@ export default function OurServices() {
             msOverflowStyle: "none",
           }}
         >
-          {serviceCards.map((service, index) => (
-            <Link
-              key={index}
-              href={`/services/${service.slug}`}
-              className="relative flex-shrink-0 w-[75vw] sm:w-[60vw] md:w-[350px] lg:w-[400px] h-[400px] md:h-[450px] lg:h-[500px] snap-center rounded-2xl overflow-hidden group cursor-pointer"
-            >
-              {/* Background Image */}
-              <Image
-                src={service.image}
-                alt={service.title}
-                fill
-                className="object-cover transition-transform duration-700 group-hover:scale-110"
-                sizes="(max-width: 640px) 75vw, (max-width: 768px) 60vw, 400px"
-              />
+          {content.cards.map((service, index) => {
+            const linkHref = service.slug ? `/services/${service.slug}` : "#"
+            const isClickable = !!service.slug
 
-              {/* Gradient Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-90 transition-opacity duration-300 group-hover:opacity-80" />
+            const cardContent = (
+              <>
+                {/* Background Image */}
+                <Image
+                  src={service.image}
+                  alt={service.title}
+                  fill
+                  className="object-cover transition-transform duration-700 group-hover:scale-110"
+                  sizes="(max-width: 640px) 75vw, (max-width: 768px) 60vw, 400px"
+                />
 
-              {/* Content */}
-              <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8 transform transition-transform duration-300">
-                <h3
-                  className="text-xl md:text-2xl font-bold text-white mb-2 md:mb-3"
-                  style={{ fontFamily: "Inter Display, sans-serif" }}
-                >
-                  {service.title}
-                </h3>
-                <p className="text-gray-300 text-sm leading-relaxed mb-3 md:mb-4 line-clamp-3 group-hover:line-clamp-none transition-all">
-                  {service.description}
-                </p>
-                <div className="h-1 w-12 bg-[#fca311] rounded-full group-hover:w-full transition-all duration-500" />
+                {/* Gradient Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-90 transition-opacity duration-300 group-hover:opacity-80" />
+
+                {/* Content */}
+                <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8 transform transition-transform duration-300">
+                  <h3
+                    className="text-xl md:text-2xl font-bold text-white mb-2 md:mb-3"
+                    style={{ fontFamily: "Inter Display, sans-serif" }}
+                  >
+                    {service.title}
+                  </h3>
+                  <p className="text-gray-300 text-sm leading-relaxed mb-3 md:mb-4 line-clamp-3 group-hover:line-clamp-none transition-all">
+                    {service.description}
+                  </p>
+                  <div className="h-1 w-12 bg-[#fca311] rounded-full group-hover:w-full transition-all duration-500" />
+                </div>
+              </>
+            )
+
+            return isClickable ? (
+              <Link
+                key={service.id || index}
+                href={linkHref}
+                className="relative flex-shrink-0 w-[75vw] sm:w-[60vw] md:w-[350px] lg:w-[400px] h-[400px] md:h-[450px] lg:h-[500px] snap-center rounded-2xl overflow-hidden group cursor-pointer"
+              >
+                {cardContent}
+              </Link>
+            ) : (
+              <div
+                key={service.id || index}
+                className="relative flex-shrink-0 w-[75vw] sm:w-[60vw] md:w-[350px] lg:w-[400px] h-[400px] md:h-[450px] lg:h-[500px] snap-center rounded-2xl overflow-hidden group"
+              >
+                {cardContent}
               </div>
-            </Link>
-          ))}
+            )
+          })}
         </div>
 
         {/* Navigation Buttons - Mobile/Tablet (centered below cards) */}

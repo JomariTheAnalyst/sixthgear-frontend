@@ -24,7 +24,14 @@ import {
 import { getRegion } from "@lib/data/regions"
 import { getMarketingForPath } from "@lib/data/marketing"
 import { BannerSlot, PopupAds } from "@modules/marketing"
-import { getHeroContent } from "@lib/strapi/home"
+import {
+  getHeroContent,
+  fetchHomeContent,
+  extractHeroContent,
+} from "@lib/strapi/home"
+import { getAboutContent } from "@lib/strapi/about"
+import { getCoffeeShowcaseContent } from "@lib/strapi/coffee"
+import { getMotoServicesContent } from "@lib/strapi/services"
 
 // Force dynamic rendering for real-time sale price updates
 export const dynamic = "force-dynamic"
@@ -69,8 +76,17 @@ export default async function Home(props: {
   // Fetch marketing content for homepage
   const marketing = await getMarketingForPath("/")
 
-  // Fetch hero content from Strapi CMS (with fallback to hardcoded values)
-  const heroContent = await getHeroContent()
+  // Fetch home content from Strapi CMS (includes hero and about sections)
+  const homeContent = await fetchHomeContent()
+  const heroContent = homeContent ? extractHeroContent(homeContent) : null
+  const aboutContent = getAboutContent(homeContent)
+  const coffeeContent = getCoffeeShowcaseContent(homeContent)
+  const servicesContent = getMotoServicesContent(homeContent)
+
+  // Debug logging
+  console.log("[HomePage] About content from Strapi:", aboutContent)
+  console.log("[HomePage] Coffee content from Strapi:", coffeeContent)
+  console.log("[HomePage] Services content from Strapi:", servicesContent)
 
   return (
     <>
@@ -81,6 +97,7 @@ export default async function Home(props: {
         description={heroContent?.description}
         primaryCta={heroContent?.primaryCta}
         secondaryCta={heroContent?.secondaryCta}
+        backgroundImage={heroContent?.backgroundImage}
       />
 
       {/* Top Banner Slot */}
@@ -91,7 +108,16 @@ export default async function Home(props: {
       />
 
       {/* About Section */}
-      <AboutSection />
+      <AboutSection
+        kicker={aboutContent?.kicker}
+        title={aboutContent?.title}
+        description={aboutContent?.description}
+        highlights={aboutContent?.highlights}
+        primaryCta={aboutContent?.primaryCta}
+        imageTop={aboutContent?.imageTop}
+        imageBottom={aboutContent?.imageBottom}
+        videoUrl={aboutContent?.videoUrl}
+      />
 
       {/* Shop By Categories */}
       <ShopByCategories />
@@ -119,10 +145,26 @@ export default async function Home(props: {
       </Suspense>
 
       {/* Coffee Showcase */}
-      <CoffeeShowcase />
+      <CoffeeShowcase
+        mainHeadingLine1={coffeeContent?.mainHeadingLine1}
+        highlightedWord={coffeeContent?.highlightedWord}
+        mainHeadingLine2={coffeeContent?.mainHeadingLine2}
+        descriptionText={coffeeContent?.descriptionText}
+        buttonText={coffeeContent?.buttonText}
+        buttonLink={coffeeContent?.buttonLink}
+        coffeeItems={coffeeContent?.coffeeItems}
+      />
 
       {/* Our Services */}
-      <OurServices />
+      {servicesContent ? (
+        <OurServices
+          sectionTitle={servicesContent.sectionTitle}
+          sectionDescription={servicesContent.sectionDescription}
+          services={servicesContent.services}
+        />
+      ) : (
+        <OurServices />
+      )}
 
       {/* Project Section */}
       <ProjectsSection />

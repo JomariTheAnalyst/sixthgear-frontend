@@ -1,63 +1,116 @@
-import { draftMode, cookies } from "next/headers"
+import { draftMode } from "next/headers"
 import { redirect } from "next/navigation"
-import { NextRequest, NextResponse } from "next/server"
-
-const BACKEND_URL =
-  process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL || "http://localhost:9000"
+import { NextRequest } from "next/server"
 
 /**
- * GET /api/preview
- * Enable draft mode and redirect to preview page
+ * Preview API Route
+ *
+ * Enables Next.js Draft Mode for previewing draft content from Strapi CMS.
+ * Called by Strapi's "Open preview" button.
+ *
+ * Query Parameters:
+ * - secret: Must match STRAPI_PREVIEW_SECRET
+ * - uid: Strapi content type UID (e.g., "api::home.home")
+ * - documentId: Strapi document ID
+ * - status: "draft" or "published"
+ * - locale: Optional locale code
  */
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
-  const token = searchParams.get("token")
-  const redirectPath = searchParams.get("redirect") || "/"
 
-  if (!token) {
-    return NextResponse.json({ error: "Token is required" }, { status: 400 })
+  console.log("[Preview] Route called with URL:", request.url)
+  console.log("[Preview] Search params:", Object.fromEntries(searchParams))
+
+  // Extract query parameters
+  const secret = searchParams.get("secret")
+  const uid = searchParams.get("uid")
+  const documentId = searchParams.get("documentId")
+  const status = searchParams.get("status")
+  const locale = searchParams.get("locale")
+
+  // Validate secret
+  const expectedSecret = process.env.STRAPI_PREVIEW_SECRET
+
+  console.log("[Preview] Secret validation:", {
+    received: secret ? "***" + secret.slice(-4) : "null",
+    expected: expectedSecret ? "***" + expectedSecret.slice(-4) : "null",
+    matches: secret === expectedSecret,
+  })
+
+  if (!expectedSecret) {
+    console.error("[Preview] STRAPI_PREVIEW_SECRET not configured")
+    return new Response("Preview mode is not configured", { status: 500 })
   }
 
-  try {
-    // Validate token with backend
-    const response = await fetch(
-      `${BACKEND_URL}/store/marketing/validate-preview?token=${token}`
-    )
+  if (secret !== expectedSecret) {
+    console.error("[Preview] Secret mismatch!")
+    return new Response("Invalid preview secret", { status: 401 })
+  }
 
-    if (!response.ok) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 })
-    }
-
-    const data = await response.json()
-
-    if (!data.valid) {
-      return NextResponse.json(
-        { error: data.error || "Invalid token" },
-        { status: 401 }
-      )
-    }
-
-    // Enable draft mode
-    const draft = await draftMode()
-    draft.enable()
-
-    // Set preview token cookie for marketing fetches
-    const cookieStore = await cookies()
-    cookieStore.set("marketing_preview_token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 600, // 10 minutes
-      path: "/",
+  // Validate required parameters
+  if (!uid || !documentId) {
+    console.error("[Preview] Missing required parameters")
+    return new Response("Missing required parameters: uid, documentId", {
+      status: 400,
     })
+  }
 
-    // Redirect to the preview page
-    redirect(redirectPath)
-  } catch (error) {
-    console.error("[Preview] Error:", error)
-    return NextResponse.json(
-      { error: "Preview validation failed" },
-      { status: 500 }
+  console.log("[Preview] Enabling draft mode for:", {
+    uid,
+    documentId,
+    status,
+    locale,
+  })
+
+  // Enable Draft Mode (await in Next.js 15+)
+  const draft = await draftMode()
+  draft.enable()
+
+  console.log("[Preview] Draft mode enabled successfully")
+
+  // Map content type UID to frontend route
+  const previewPath = getPreviewPath(uid, documentId, locale)
+
+  if (!previewPath) {
+    console.error("[Preview] No route configured for:", uid)
+    return new Response(
+      `No preview route configured for content type: ${uid}`,
+      {
+        status: 404,
+      }
     )
   }
+
+  console.log("[Preview] Redirecting to:", previewPath)
+
+  // Redirect to the preview page
+  redirect(previewPath)
+}
+
+/**
+ * Map Strapi content type UID to Next.js route
+ *
+ * @param uid - Strapi content type UID
+ * @param documentId - Strapi document ID
+ * @param locale - Optional locale code
+ * @returns Preview path or null if not configured
+ */
+function getPreviewPath(
+  uid: string,
+  documentId: string,
+  locale: string | null
+): string | null {
+  // Default country code (can be overridden by locale)
+  const countryCode = locale || "ph"
+
+  // Map content types to their routes
+  const contentTypeRoutes: Record<string, string> = {
+    "api::home.home": `/${countryCode}`,
+    // Add more content types as needed:
+    // "api::page.page": `/${countryCode}/pages/${documentId}`,
+    // "api::blog-post.blog-post": `/${countryCode}/blog/${documentId}`,
+    // "api::product.product": `/${countryCode}/products/${documentId}`,
+  }
+
+  return contentTypeRoutes[uid] || null
 }

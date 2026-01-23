@@ -15,6 +15,7 @@ interface HeroProps {
     text: string
     link: string
   }
+  backgroundImage?: string | null
 }
 
 const Hero = ({
@@ -23,21 +24,36 @@ const Hero = ({
   description = "Professional servicing, repairs, detailing & performance upgrades. Trusted by riders for precision and care.",
   primaryCta = { text: "More About Us", link: "/about" },
   secondaryCta = { text: "View Services", link: "/services" },
+  backgroundImage = null,
 }: HeroProps) => {
   // Split title by newline for rendering
   const titleLines = title.split("\n")
+
+  // Use CMS background image if available, otherwise use default
+  const bgImage = backgroundImage || "/images/homepage/banner-img.png"
+
   return (
     <div className="relative w-full min-h-screen bg-[#0a0a0a] overflow-hidden flex flex-col">
       {/* Background Image - Different positioning for mobile */}
       <div className="absolute inset-0 z-0">
-        <Image
-          src="/images/homepage/banner-img.png"
-          alt="Hero Background"
-          fill
-          className="object-cover opacity-40 md:opacity-60"
-          sizes="100vw"
-          priority
-        />
+        {backgroundImage ? (
+          // CMS image - use regular img tag for external URLs
+          <img
+            src={bgImage}
+            alt="Hero Background"
+            className="absolute inset-0 w-full h-full object-cover opacity-40 md:opacity-60"
+          />
+        ) : (
+          // Default image - use Next.js Image
+          <Image
+            src={bgImage}
+            alt="Hero Background"
+            fill
+            className="object-cover opacity-40 md:opacity-60"
+            sizes="100vw"
+            priority
+          />
+        )}
         {/* Gradient Overlays */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/50 to-black/90 md:bg-gradient-to-r md:from-black md:via-black/80 md:to-transparent" />
       </div>

@@ -161,6 +161,13 @@ export async function middleware(request: NextRequest) {
         })
       }
 
+      // Add CSP headers to allow iframe embedding from Strapi
+      const strapiUrl = process.env.STRAPI_URL || "http://localhost:1337"
+      response.headers.set(
+        "Content-Security-Policy",
+        `frame-ancestors 'self' ${strapiUrl}`
+      )
+
       return response
     }
 
@@ -203,6 +210,13 @@ export async function middleware(request: NextRequest) {
         sameSite: "lax",
       })
     }
+
+    // Add CSP headers to allow iframe embedding from Strapi
+    const strapiUrl = process.env.STRAPI_URL || "http://localhost:1337"
+    response.headers.set(
+      "Content-Security-Policy",
+      `frame-ancestors 'self' ${strapiUrl}`
+    )
 
     return response
   } catch (error) {

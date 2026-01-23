@@ -7,7 +7,47 @@
 
 import { fetchStrapi } from "../strapi"
 
-// Type definitions for Strapi Home content
+// Type definitions for Strapi Home content (Strapi v5 structure)
+export interface StrapiImageFormat {
+  ext: string
+  url: string
+  hash: string
+  mime: string
+  name: string
+  path: string | null
+  size: number
+  width: number
+  height: number
+  sizeInBytes: number
+}
+
+export interface StrapiImage {
+  id: number
+  documentId: string
+  name: string
+  alternativeText: string | null
+  caption: string | null
+  width: number
+  height: number
+  formats: {
+    large?: StrapiImageFormat
+    medium?: StrapiImageFormat
+    small?: StrapiImageFormat
+    thumbnail?: StrapiImageFormat
+  }
+  hash: string
+  ext: string
+  mime: string
+  size: number
+  url: string
+  previewUrl: string | null
+  provider: string
+  provider_metadata: any
+  createdAt: string
+  updatedAt: string
+  publishedAt: string
+}
+
 export interface HeroBlock {
   __component: "sections.hero"
   id: number
@@ -19,17 +59,17 @@ export interface HeroBlock {
   secondary_cta_text: string
   secondary_cta_link: string
   enabled: boolean
+  hero_bg: StrapiImage | null
 }
 
 export interface HomeContent {
   data: {
     id: number
-    attributes: {
-      blocks: Array<HeroBlock | any>
-      createdAt: string
-      updatedAt: string
-      publishedAt: string
-    }
+    documentId: string
+    createdAt: string
+    updatedAt: string
+    publishedAt: string
+    blocks: Array<HeroBlock | any>
   }
 }
 
@@ -45,6 +85,7 @@ export interface HeroContent {
     text: string
     link: string
   }
+  backgroundImage: string | null
 }
 
 /**
@@ -55,12 +96,29 @@ export interface HeroContent {
 export async function fetchHomeContent(): Promise<HomeContent | null> {
   return fetchStrapi<HomeContent>("/api/home", {
     params: {
-      "populate[blocks]": "*",
+      "populate[blocks][populate]": "*",
     },
-    next: {
-      revalidate: 60, // ISR: revalidate every 60 seconds
-    },
+    // Note: caching is handled by fetchStrapi based on draft mode
   })
+}
+
+/**
+ * Resolve Strapi image URL to absolute URL
+ *
+ * @param url - Image URL from Strapi (can be relative or absolute)
+ * @returns Absolute image URL
+ */
+function resolveImageUrl(url: string | null | undefined): string | null {
+  if (!url) return null
+
+  // If already absolute URL, return as-is
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    return url
+  }
+
+  // If relative URL, prefix with STRAPI_URL
+  const strapiUrl = process.env.STRAPI_URL || "http://localhost:1337"
+  return `${strapiUrl}${url.startsWith("/") ? "" : "/"}${url}`
 }
 
 /**
@@ -72,19 +130,37 @@ export async function fetchHomeContent(): Promise<HomeContent | null> {
 export function extractHeroContent(
   homeContent: HomeContent | null
 ): HeroContent | null {
-  if (!homeContent?.data?.attributes?.blocks) {
+  if (!homeContent?.data?.blocks) {
+    console.log("[Strapi] No blocks found in home content")
     return null
   }
 
+  console.log("[Strapi] Extracting hero from blocks:", {
+    totalBlocks: homeContent.data.blocks.length,
+    blockTypes: homeContent.data.blocks.map((b) => b.__component),
+  })
+
   // Find the hero block that is enabled
-  const heroBlock = homeContent.data.attributes.blocks.find(
+  const heroBlock = homeContent.data.blocks.find(
     (block): block is HeroBlock =>
       block.__component === "sections.hero" && block.enabled === true
   )
 
   if (!heroBlock) {
+    console.log("[Strapi] No enabled hero block found")
     return null
   }
+
+  console.log("[Strapi] Found hero block:", {
+    id: heroBlock.id,
+    title: heroBlock.title,
+    enabled: heroBlock.enabled,
+    hasBackground: !!heroBlock.hero_bg,
+  })
+
+  // Extract background image URL (Strapi v5 structure - direct object, not nested in data)
+  const backgroundImageUrl = heroBlock.hero_bg?.url || null
+  const resolvedBackgroundImage = resolveImageUrl(backgroundImageUrl)
 
   // Transform to frontend format
   return {
@@ -99,6 +175,7 @@ export function extractHeroContent(
       text: heroBlock.secondary_cta_text,
       link: heroBlock.secondary_cta_link,
     },
+    backgroundImage: resolvedBackgroundImage,
   }
 }
 
