@@ -29,10 +29,8 @@ export default async function PreviewPage(props: {
   console.log("[PreviewPage] Draft mode enabled:", isEnabled)
   console.log("[PreviewPage] Country code:", countryCode)
 
-  // If draft mode is not enabled, redirect to homepage
-  if (!isEnabled) {
-    console.log("[PreviewPage] Draft mode not enabled, redirecting to homepage")
-    redirect(`/${countryCode}`)
+  // Note: We don't redirect if draft mode is not enabled
+  // Strapi iframe loads this page first, then enables draft mode via /api/preview
   }
 
   return (
@@ -43,9 +41,13 @@ export default async function PreviewPage(props: {
           <div className="flex items-center gap-3">
             <span className="text-2xl">🔍</span>
             <div>
-              <div className="font-bold">Preview Mode Active</div>
+              <div className="font-bold">
+                {isEnabled ? "Preview Mode Active" : "Preview Mode Ready"}
+              </div>
               <div className="text-xs text-orange-100">
-                You are viewing draft content from Strapi CMS
+                {isEnabled 
+                  ? "You are viewing draft content from Strapi CMS"
+                  : "Waiting for Strapi to enable draft mode..."}
               </div>
             </div>
           </div>
@@ -100,7 +102,9 @@ export default async function PreviewPage(props: {
               </h2>
               <p className="text-gray-600">
                 Status:{" "}
-                <span className="font-bold text-green-600">Enabled</span>
+                <span className={`font-bold ${isEnabled ? 'text-green-600' : 'text-yellow-600'}`}>
+                  {isEnabled ? 'Enabled' : 'Ready'}
+                </span>
               </p>
             </div>
           </div>
