@@ -155,7 +155,10 @@ export async function middleware(request: NextRequest) {
           `frame-ancestors 'self' ${strapiCloudDomain} http://localhost:1337`
         )
 
-        // Do NOT set X-Frame-Options for preview routes
+        // CRITICAL: Delete X-Frame-Options to allow iframe embedding
+        response.headers.delete("X-Frame-Options")
+        response.headers.delete("x-frame-options")
+
         console.log(
           "[Middleware] Set CSP for preview route to allow Strapi Cloud iframe"
         )

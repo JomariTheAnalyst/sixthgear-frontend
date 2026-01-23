@@ -1,0 +1,22 @@
+{
+  "headers": [
+    {
+      "source": "/:countryCode(ph|us|sg|my)/preview",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "frame-ancestors 'self' https://rational-peace-7a8493cc74.strapiapp.com http://localhost:1337"
+        }
+      ]
+    },
+    {
+      "source": "/api/preview",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "frame-ancestors 'self' https://rational-peace-7a8493cc74.strapiapp.com http://localhost:1337"
+        }
+      ]
+    }
+  ]
+}
