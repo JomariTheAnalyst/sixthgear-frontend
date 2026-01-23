@@ -81,10 +81,11 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  console.log("[Preview] Redirecting to:", previewPath)
+  console.log("[Preview] Redirecting to dedicated preview page: /preview")
 
-  // Redirect to the preview page
-  redirect(previewPath)
+  // Redirect to the dedicated preview page (not the main site)
+  // This ensures the preview is embeddable in Strapi's iframe
+  redirect("/preview")
 }
 
 /**
