@@ -40,10 +40,12 @@ export const metadata: Metadata = {
   manifest: "/images/favicon/site.webmanifest",
 }
 
+import { hendrix } from "@lib/fonts"
+
 export default function RootLayout(props: { children: React.ReactNode }) {
   return (
     <html lang="en" data-mode="light">
-      <body>
+      <body className={`${hendrix.variable} font-sans`}>
         <PreviewIndicator />
         <main className="relative">{props.children}</main>
       </body>

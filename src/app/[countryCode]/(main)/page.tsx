@@ -16,6 +16,7 @@ import ProjectsSection from "@modules/home/components/projects"
 import Brands from "@modules/home/components/brands"
 import ClientStories from "@modules/home/components/client-stories"
 import StoreLocation from "@modules/home/components/store-location"
+import ShopByBrands from "@modules/home/components/shop-by-brands"
 import {
   HotDealsSection,
   BestSellersSection,
@@ -99,6 +100,9 @@ export default async function Home(props: {
         secondaryCta={heroContent?.secondaryCta}
         backgroundImage={heroContent?.backgroundImage}
       />
+
+      {/* Shop By Brands Section */}
+      <ShopByBrands />
 
       {/* Top Banner Slot */}
       <BannerSlot

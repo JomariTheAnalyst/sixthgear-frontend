@@ -1,13 +1,16 @@
 "use client"
 
 import { useEffect, useState, useRef } from "react"
-import Image from "next/image"
 import { usePathname } from "next/navigation"
 
 import { StoreRegion, HttpTypes } from "@medusajs/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import CartDropdown from "@modules/layout/components/cart-dropdown"
 import MobileMenu from "./mobile-menu"
+import Link from "next/link"
+import SearchBar from "@modules/layout/components/search-bar"
+import Logo from "@modules/layout/components/brand-logo"
+import ServicesDropdown from "@modules/layout/components/services-dropdown"
 import { ServiceCategory } from "@lib/services-data"
 
 const navLinks = [
@@ -30,6 +33,7 @@ const NavClient = ({ regions, cart, servicesData, customer }: NavClientProps) =>
   const [isScrolled, setIsScrolled] = useState(false)
   const [isServicesOpen, setIsServicesOpen] = useState(false)
   const servicesTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const headerRef = useRef<HTMLElement>(null)
   const pathname = usePathname()
 
   useEffect(() => {
@@ -46,28 +50,6 @@ const NavClient = ({ regions, cart, servicesData, customer }: NavClientProps) =>
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
-  const isHomepage = pathname === "/" || /^\/[a-z]{2}$/.test(pathname)
-
-  const containerClasses =
-    isScrolled || !isHomepage
-      ? "bg-white/95 backdrop-blur-md shadow-sm border-gray-100"
-      : "bg-transparent border-transparent"
-
-  const textClasses =
-    isScrolled || !isHomepage
-      ? "text-gray-700 hover:text-[#F16D34]"
-      : "text-white hover:text-[#F16D34]"
-
-  const logoClasses =
-    isScrolled || !isHomepage
-      ? "brightness-100" // Original
-      : "brightness-0 invert" // White/Inverted
-
-  const iconClasses =
-    isScrolled || !isHomepage
-      ? "text-gray-600 hover:text-[#F16D34]"
-      : "text-white hover:text-[#F16D34]"
-
   // Helper to get initials
   const getInitials = () => {
     if (!customer) return ""
@@ -77,338 +59,128 @@ const NavClient = ({ regions, cart, servicesData, customer }: NavClientProps) =>
     return initials || customer.email?.charAt(0).toUpperCase() || "U"
   }
 
+  const textClasses = "text-gray-900 hover:text-[#F16D34]"
+
+  const handleServicesEnter = () => {
+    if (servicesTimeoutRef.current) clearTimeout(servicesTimeoutRef.current)
+    setIsServicesOpen(true)
+  }
+
+  const handleServicesLeave = () => {
+    servicesTimeoutRef.current = setTimeout(() => setIsServicesOpen(false), 200)
+  }
+
   return (
-    <div
-      className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
-        isScrolled || !isHomepage ? "py-0" : "py-0"
-      }`}
-    >
-      <header
-        className={`relative h-20 md:h-24 mx-auto border-b duration-300 ${containerClasses}`}
-      >
-        <nav className="content-container flex items-center justify-between w-full h-full">
-          {/* Logo - Left */}
-          <div className="flex-shrink-0 transition-all duration-300">
-            <LocalizedClientLink href="/" className="flex items-center">
-              <Image
-                src="/images/logo/sixthgear-removebg-preview.png"
-                alt="Sixthgear Logo"
-                width={320}
-                height={100}
-                className={`h-20 md:h-28 w-auto object-contain -my-4 transition-all duration-300 ${logoClasses}`}
-                priority
-              />
-            </LocalizedClientLink>
-          </div>
+    <>
+      <div className={`sticky top-10 inset-x-0 z-50 bg-white transition-all duration-300 ${isScrolled ? "shadow-md" : ""}`}>
+        <header ref={headerRef} className="relative mx-auto border-b border-gray-100 bg-white">
+          <nav className="content-container w-full h-full flex flex-col">
+            {/* Top Bar: Search - Logo - Account/Cart */}
+            <div className="flex items-center justify-between py-4 border-b border-gray-100/50">
+              {/* Left: Menu Toggle + Search Icon (Mobile) / Search Bar (Desktop) */}
+              <div className="flex-1 flex items-center gap-1">
+                {/* Mobile: Hamburger Menu + Search Icon */}
+                <div className="md:hidden flex items-center gap-1">
+                  <MobileMenu regions={regions} navLinks={navLinks} />
+                  <button className="p-2 text-gray-900 hover:text-[#F16D34] transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                    </svg>
+                  </button>
+                </div>
+                {/* Desktop: Search Bar */}
+                <div className="hidden md:block flex-1">
+                  <SearchBar />
+                </div>
+              </div>
 
-          {/* Desktop Navigation - Center */}
-          <div className="hidden md:flex items-center justify-center flex-1 px-8">
-            <ul className="flex items-center gap-8">
-              {navLinks.map((link) => (
-                <li
-                  key={link.name}
-                  className="relative"
-                  onMouseEnter={() => {
-                    if (link.hasDropdown) {
-                      if (servicesTimeoutRef.current)
-                        clearTimeout(servicesTimeoutRef.current)
-                      setIsServicesOpen(true)
-                    }
-                  }}
-                  onMouseLeave={() => {
-                    if (link.hasDropdown) {
-                      servicesTimeoutRef.current = setTimeout(
-                        () => setIsServicesOpen(false),
-                        150
-                      )
-                    }
-                  }}
+              {/* Center: Logo - Single Line */}
+              <div className="flex-1 flex justify-center px-2">
+                <LocalizedClientLink href="/" className="flex items-center justify-center whitespace-nowrap">
+                  <Logo />
+                </LocalizedClientLink>
+              </div>
+
+              {/* Right: Account + Cart Icons - Always visible */}
+              <div className="flex-1 flex justify-end items-center gap-2 md:gap-4">
+                {/* Account Icon */}
+                <LocalizedClientLink
+                  href="/account"
+                  className="hover:text-[#F16D34] transition-colors text-gray-900 p-2 md:p-0"
                 >
-                  <LocalizedClientLink
-                    href={link.href}
-                    className={`relative px-2 py-2 text-sm font-bold uppercase tracking-wider transition-colors duration-200 group flex items-center gap-1 ${textClasses}`}
-                  >
-                    {link.name}
-                    {link.hasDropdown && (
-                      <svg
-                        className={`w-3 h-3 transition-transform duration-200 ${
-                          isServicesOpen ? "rotate-180" : ""
-                        }`}
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 9l-7 7-7-7"
-                        />
-                      </svg>
-                    )}
-                    <span
-                      className={`absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-[#F16D34] transition-all duration-300 group-hover:w-full`}
-                    />
-                  </LocalizedClientLink>
-
-                  {/* Services Dropdown */}
-                  {link.hasDropdown && isServicesOpen && (
-                    <div
-                      className="absolute top-full left-1/2 -translate-x-1/2 pt-4 z-50"
-                      onMouseEnter={() => {
-                        if (servicesTimeoutRef.current)
-                          clearTimeout(servicesTimeoutRef.current)
-                      }}
-                      onMouseLeave={() => {
-                        servicesTimeoutRef.current = setTimeout(
-                          () => setIsServicesOpen(false),
-                          150
-                        )
-                      }}
-                    >
-                      <div
-                        className={`backdrop-blur-xl rounded-xl shadow-2xl border p-6 min-w-[800px] transition-all duration-300 ${
-                          isScrolled || !isHomepage
-                            ? "bg-white/95 border-gray-200"
-                            : "bg-[#0a0a0a]/95 border-white/10"
-                        }`}
-                      >
-                        {/* Services Grid - 2 columns x 4 rows with icons */}
-                        <div className="grid grid-cols-2 gap-x-8 gap-y-6">
-                          {servicesData.map((service, index) => {
-                            // Icon mapping for each service
-                            const icons = [
-                              // Service & Preventive Maintenance
-                              <svg
-                                key={index}
-                                className="w-6 h-6"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                                />
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                                />
-                              </svg>,
-                              // Repairs & Diagnostics
-                              <svg
-                                key={index}
-                                className="w-6 h-6"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"
-                                />
-                              </svg>,
-                              // Accessories & Custom Installation
-                              <svg
-                                key={index}
-                                className="w-6 h-6"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z"
-                                />
-                              </svg>,
-                              // Wheels, Drivetrain & Handling
-                              <svg
-                                key={index}
-                                className="w-6 h-6"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <circle
-                                  cx="12"
-                                  cy="12"
-                                  r="10"
-                                  strokeWidth={2}
-                                />
-                                <circle cx="12" cy="12" r="3" strokeWidth={2} />
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M12 2v4m0 12v4M2 12h4m12 0h4"
-                                />
-                              </svg>,
-                              // Detailing, Care & Protection
-                              <svg
-                                key={index}
-                                className="w-6 h-6"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
-                                />
-                              </svg>,
-                              // Performance & Upgrade Services
-                              <svg
-                                key={index}
-                                className="w-6 h-6"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M13 10V3L4 14h7v7l9-11h-7z"
-                                />
-                              </svg>,
-                              // Roadside Assistance & Recovery
-                              <svg
-                                key={index}
-                                className="w-6 h-6"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"
-                                />
-                              </svg>,
-                              // Rider Support & Convenience
-                              <svg
-                                key={index}
-                                className="w-6 h-6"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                                />
-                              </svg>,
-                            ]
-
-                            return (
-                              <LocalizedClientLink
-                                key={service.id}
-                                href={`/services/${service.slug}`}
-                                className={`group/item flex items-start gap-4 p-3 rounded-lg transition-all duration-200 ${
-                                  isScrolled || !isHomepage
-                                    ? "hover:bg-gray-100"
-                                    : "hover:bg-white/10"
-                                }`}
-                              >
-                                <div
-                                  className={`flex-shrink-0 transition-colors mt-0.5 ${
-                                    isScrolled || !isHomepage
-                                      ? "text-gray-700 group-hover/item:text-[#F16D34]"
-                                      : "text-white group-hover/item:text-[#F16D34]"
-                                  }`}
-                                >
-                                  {icons[index]}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <h4
-                                    className={`font-bold text-sm mb-0.5 transition-colors ${
-                                      isScrolled || !isHomepage
-                                        ? "text-gray-900 group-hover/item:text-[#F16D34]"
-                                        : "text-white group-hover/item:text-[#F16D34]"
-                                    }`}
-                                  >
-                                    {service.title}
-                                  </h4>
-                                  <p
-                                    className={`text-xs leading-relaxed line-clamp-2 ${
-                                      isScrolled || !isHomepage
-                                        ? "text-gray-500"
-                                        : "text-gray-400"
-                                    }`}
-                                  >
-                                    {service.items[0]}
-                                  </p>
-                                </div>
-                              </LocalizedClientLink>
-                            )
-                          })}
-                        </div>
-                      </div>
+                  {customer ? (
+                    <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-[#F16D34] flex items-center justify-center text-white font-bold text-xs tracking-widest">
+                      {getInitials()}
                     </div>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 md:w-6 md:h-6">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                    </svg>
                   )}
-                </li>
-              ))}
-            </ul>
-          </div>
+                </LocalizedClientLink>
 
-          {/* Right Side - Account & Cart Icons */}
-          <div className="flex items-center gap-4 md:gap-6">
-            {/* Account */}
-            <LocalizedClientLink
-              href="/account"
-              className={`p-1 transition-all duration-200 hover:scale-105 ${iconClasses}`}
-              data-testid="nav-account-link"
-            >
-              {customer ? (
-                <div className="w-9 h-9 rounded-full bg-[#F16D34] flex items-center justify-center text-white font-bold text-sm tracking-widest shadow-sm ring-2 ring-white/20">
-                  {getInitials()}
+                {/* Cart Icon */}
+                <div className="hover:text-[#F16D34] transition-colors text-gray-900">
+                  <CartDropdown cart={cart} />
                 </div>
-              ) : (
-                <div className="p-1">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
+              </div>
+            </div>
+
+            {/* Bottom Bar: Navigation Links */}
+            <div className="hidden md:flex justify-center py-3">
+              <ul className="flex items-center gap-8">
+                {navLinks.map((link) => (
+                  <li
+                    key={link.name}
+                    className="relative"
+                    onMouseEnter={() => link.hasDropdown && handleServicesEnter()}
+                    onMouseLeave={() => link.hasDropdown && handleServicesLeave()}
                   >
-                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                    <circle cx="12" cy="7" r="4" />
-                  </svg>
-                </div>
-              )}
-            </LocalizedClientLink>
-
-            {/* Cart */}
-            <div className={`${iconClasses}`}>
-              <CartDropdown cart={cart} />
+                    <LocalizedClientLink
+                      href={link.href}
+                      className={`relative px-2 py-1 text-sm font-bold uppercase tracking-wider transition-colors duration-200 group flex items-center gap-1 ${link.hasDropdown && isServicesOpen ? 'text-[#F16D34]' : textClasses}`}
+                    >
+                      {link.name}
+                      {link.hasDropdown && (
+                        <svg
+                          className={`w-3 h-3 transition-transform duration-200 ${isServicesOpen ? "rotate-180" : ""}`}
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 9l-7 7-7-7"
+                          />
+                        </svg>
+                      )}
+                      <span
+                        className={`absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-[#F16D34] transition-all duration-300 group-hover:w-full`}
+                      />
+                    </LocalizedClientLink>
+                  </li>
+                ))}
+              </ul>
             </div>
+          </nav>
+        </header>
+      </div>
 
-            {/* Mobile Menu */}
-            <div className={`${textClasses}`}>
-              <MobileMenu regions={regions} navLinks={navLinks} />
-            </div>
-          </div>
-        </nav>
-      </header>
-    </div>
+      {/* Services Dropdown - Rendered Outside Header for Full Width with Smooth Animation */}
+      <div
+        className={`fixed inset-x-0 z-[100] bg-white shadow-2xl border-t border-gray-100 transition-all duration-700 ease-[cubic-bezier(0.25,0.1,0.25,1.0)] transform ${isServicesOpen
+            ? "opacity-100 translate-y-0 visible"
+            : "opacity-0 -translate-y-4 invisible pointer-events-none"
+          }`}
+        style={{ top: headerRef.current?.getBoundingClientRect().bottom || 0 }}
+        onMouseEnter={handleServicesEnter}
+        onMouseLeave={handleServicesLeave}
+      >
+        <ServicesDropdown />
+      </div>
+    </>
   )
 }
 

@@ -173,6 +173,33 @@ Lastly, the company may acquire, lease, or manage properties necessary for the o
       },
     ],
   },
+
+  serviceMenu: {
+    categories: [
+      { title: "Preventive Maintenance", href: "/services/preventive-maintenance" },
+      { title: "Repairs & Diagnostics", href: "/services/repairs-diagnostics" },
+      { title: "Custom Installation", href: "/services/custom-installation" },
+      { title: "Wheels & Handling", href: "/services/wheels-handling" },
+      { title: "Detailing & Care", href: "/services/detailing-care" },
+      { title: "Performance Upgrades", href: "/services/performance-upgrades" },
+      { title: "Roadside Assistance", href: "/services/roadside-assistance" },
+      { title: "Rider Support", href: "/services/rider-support" },
+    ],
+    popular: [
+      "PMS Service",
+      "ECU Remapping",
+      "Ceramic Coating",
+      "Tire Changing"
+    ],
+    brands: [
+      { name: "Suzuki", image: "/images/brands/brand1.png" },
+      { name: "Yamaha", image: "/images/brands/brand2.png" },
+      { name: "KTM", image: "/images/brands/brand3.png" },
+      { name: "Kawasaki", image: "/images/brands/brand4.png" },
+      { name: "BMW", image: "/images/brands/brand5.png" },
+      { name: "Royal Enfield", image: "/images/brands/brand6.png" },
+    ]
+  }
 }
 
 export type CompanyData = typeof companyData
