@@ -5,6 +5,7 @@ import { useRef } from "react"
 /**
  * Client Testimonials Section
  * Displays a list of testimonials from satisfied customers.
+ * Now connected to Strapi CMS with field-level fallbacks.
  */
 
 interface Testimonial {
@@ -15,88 +16,11 @@ interface Testimonial {
   avatar: string
 }
 
-const testimonials: Testimonial[] = [
-  {
-    id: 1,
-    name: "Jones Charles",
-    role: "Big Bike Owner",
-    quote:
-      "Sixth Gear handled my PMS and accessory installs with care and transparency. Clean work, proper tools, and honest advice. You can tell this shop is run by riders who actually care.",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Jones",
-  },
-  {
-    id: 2,
-    name: "Mike Shinoda",
-    role: "Adventure Rider",
-    quote:
-      "I’ve had multiple bikes serviced here. From diagnostics to detailing, the quality is consistent. Plus, having good coffee while waiting is a big bonus.",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Mike",
-  },
-  {
-    id: 3,
-    name: "Peter Jaksen",
-    role: "Touring Enthusiast",
-    quote:
-      "Fast turnaround without compromising quality. They explained everything clearly and didn’t upsell unnecessary work. Highly recommended for premium motorcycles.",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Peter",
-  },
-  {
-    id: 4,
-    name: "Anama Menen",
-    role: "Daily Rider",
-    quote:
-      "From emergency towing to full service, Sixth Gear delivered. Professional team, clean shop, and very approachable staff. This is now my go-to moto shop.",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Anama",
-  },
-  {
-    id: 5,
-    name: "Carlo Reyes",
-    role: "Sportbike Rider",
-    quote:
-      "They installed my exhaust, lights, and accessories perfectly. Wiring was clean and properly routed. Attention to detail here is on another level.",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Carlo",
-  },
-  {
-    id: 6,
-    name: "Mark Villanueva",
-    role: "Big Bike First-Time Owner",
-    quote:
-      "As a new big bike owner, I appreciated how patient and informative the team was. They guided me through proper maintenance and safety checks.",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Mark",
-  },
-  {
-    id: 7,
-    name: "Jason Lim",
-    role: "Cafe Racer Builder",
-    quote:
-      "Great balance of technical skill and taste. They helped me with parts selection and installation without rushing the process. Solid workmanship.",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Jason",
-  },
-  {
-    id: 8,
-    name: "Paolo Santos",
-    role: "Weekend Rider",
-    quote:
-      "Dropped by for detailing and ended up staying for coffee and conversation. Friendly atmosphere with serious service capability. Rare combination.",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Paolo",
-  },
-  {
-    id: 9,
-    name: "Kevin Tan",
-    role: "Long-Distance Rider",
-    quote:
-      "I trust Sixth Gear before any long ride. Pre-ride inspections are thorough, and they don’t cut corners. Peace of mind every time.",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Kevin",
-  },
-  {
-    id: 10,
-    name: "Andrew Cruz",
-    role: "Motorcycle Enthusiast",
-    quote:
-      "Good service, fair pricing, and clear communication. You always know what you’re paying for and why. That alone sets them apart.",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Andrew",
-  },
-]
+interface ClientTestimonialsProps {
+  sectionTitle?: string
+  sectionDescription?: string
+  testimonials?: Testimonial[]
+}
 
 const QuoteIcon = () => (
   <svg
@@ -144,8 +68,17 @@ const TestimonialCard = ({ testimonial }: { testimonial: Testimonial }) => (
   </div>
 )
 
-export default function ClientTestimonials() {
+export default function ClientTestimonials({
+  sectionTitle = "What Clients Say",
+  sectionDescription = "Trusted Motorcycle Service, Gear & Rider Experience",
+  testimonials = [],
+}: ClientTestimonialsProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+
+  // Don't render if no testimonials
+  if (!testimonials || testimonials.length === 0) {
+    return null
+  }
 
   const scroll = (direction: "left" | "right") => {
     if (scrollContainerRef.current) {
@@ -167,10 +100,10 @@ export default function ClientTestimonials() {
               className="text-gray-900 text-4xl md:text-5xl lg:text-6xl font-bold mb-4"
               style={{ fontFamily: "Tanker, sans-serif" }}
             >
-              What Clients Say
+              {sectionTitle}
             </h2>
             <p className="text-gray-500 text-lg md:text-xl font-medium">
-              Trusted Motorcycle Service, Gear & Rider Experience
+              {sectionDescription}
             </p>
           </div>
 

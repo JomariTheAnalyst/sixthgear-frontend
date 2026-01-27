@@ -3,41 +3,39 @@
 import { useRef } from "react"
 import Image from "next/image"
 
-const stories = [
-  {
-    title: "First Long Ride After Engine Rebuild",
-    excerpt:
-      "After months of waiting, finally took my bike out for a 300km ride. The engine feels brand new thanks to the team at Sixthgear.",
-    author: "Marco R.",
-    date: "January 10, 2026",
-    category: "Rider Story",
-    image:
-      "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80",
-  },
-  {
-    title: "Why Regular PMS Matters",
-    excerpt:
-      "A quick guide on preventive maintenance schedules and why sticking to them can save you from costly repairs down the road.",
-    author: "Sixthgear Team",
-    date: "January 5, 2026",
-    category: "Garage Notes",
-    image:
-      "https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?w=600&q=80",
-  },
-  {
-    title: "Weekend Ride to Tagaytay",
-    excerpt:
-      "Joined the Sunday group ride with fellow riders. Great weather, great roads, and even better company at the coffee stop.",
-    author: "James L.",
-    date: "December 28, 2025",
-    category: "Rider Story",
-    image:
-      "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=600&q=80",
-  },
-]
+/**
+ * Client Stories (Rider Stories) Section
+ * Displays rider stories and garage notes.
+ * Now connected to Strapi CMS with field-level fallbacks.
+ */
 
-export default function ClientStories() {
+interface Story {
+  id: number
+  title: string
+  excerpt: string
+  author: string
+  date: string
+  category: string
+  image: string
+}
+
+interface ClientStoriesProps {
+  sectionTitle?: string
+  sectionDescription?: string
+  stories?: Story[]
+}
+
+export default function ClientStories({
+  sectionTitle = "Rider Stories & Garage Notes",
+  sectionDescription = "Tips, stories, and insights from the workshop, the road, and the rider lounge",
+  stories = [],
+}: ClientStoriesProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+
+  // Don't render if no stories
+  if (!stories || stories.length === 0) {
+    return null
+  }
 
   const scroll = (direction: "left" | "right") => {
     if (scrollContainerRef.current) {
@@ -58,11 +56,10 @@ export default function ClientStories() {
             className="text-2xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-3 md:mb-4"
             style={{ fontFamily: "Tanker, sans-serif" }}
           >
-            Rider Stories & Garage Notes
+            {sectionTitle}
           </h2>
           <p className="text-base md:text-lg lg:text-xl text-gray-500 max-w-2xl mx-auto">
-            Tips, stories, and insights from the workshop, the road, and the
-            rider lounge
+            {sectionDescription}
           </p>
         </div>
 
@@ -77,9 +74,9 @@ export default function ClientStories() {
               WebkitOverflowScrolling: "touch",
             }}
           >
-            {stories.map((story, index) => (
+            {stories.map((story) => (
               <article
-                key={index}
+                key={story.id}
                 className="group flex-shrink-0 w-[80vw] sm:w-[60vw] md:w-[45vw] bg-white rounded-2xl overflow-hidden shadow-sm snap-center"
               >
                 {/* Image */}
@@ -163,9 +160,9 @@ export default function ClientStories() {
 
         {/* Desktop: Grid Layout */}
         <div className="hidden lg:grid lg:grid-cols-3 gap-8 px-4 md:px-8">
-          {stories.map((story, index) => (
+          {stories.map((story) => (
             <article
-              key={index}
+              key={story.id}
               className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500"
             >
               {/* Image */}

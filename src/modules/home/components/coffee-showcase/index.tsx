@@ -5,8 +5,11 @@
  * Displays featured coffee drinks with paper cut design
  * Uses Tanker font for headings and Inter Display for body text
  * Mobile/Tablet: Horizontal swipe carousel
- * Desktop: 3-column grid
+ * Desktop: Grid with carousel navigation when > 4 items
  */
+
+import { useRef, useState } from "react"
+import Link from "next/link"
 
 interface CoffeeItem {
   id: number
@@ -58,6 +61,9 @@ export default function CoffeeShowcase({
   buttonLink,
   coffeeItems,
 }: CoffeeShowcaseProps) {
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const [currentIndex, setCurrentIndex] = useState(0)
+
   // Use Strapi content if provided, otherwise fall back to hardcoded
   const content = {
     headingLine1: mainHeadingLine1 || "Sixthgear",
@@ -69,6 +75,22 @@ export default function CoffeeShowcase({
     ctaText: buttonText || "View Full Menu",
     ctaLink: buttonLink || "/menu",
     drinks: coffeeItems || defaultFeaturedDrinks,
+  }
+
+  const totalItems = content.drinks.length
+  const maxDisplayItems = 6
+  const displayDrinks = content.drinks.slice(0, maxDisplayItems)
+  const hasMoreItems = totalItems > maxDisplayItems
+  const showCarousel = displayDrinks.length > 4
+  const itemsPerPage = 4
+  const maxIndex = Math.max(0, displayDrinks.length - itemsPerPage)
+
+  const scroll = (direction: "left" | "right") => {
+    if (direction === "left") {
+      setCurrentIndex((prev) => Math.max(0, prev - 1))
+    } else {
+      setCurrentIndex((prev) => Math.min(maxIndex, prev + 1))
+    }
   }
   return (
     <section className="relative">
@@ -181,44 +203,167 @@ export default function CoffeeShowcase({
             </div>
           </div>
 
-          {/* Desktop: Grid Layout */}
-          <div className="hidden lg:grid lg:grid-cols-3 gap-8 lg:gap-10">
-            {content.drinks.map((drink) => (
-              <div key={drink.id} className="group relative">
-                {/* Card - Large & Dominating */}
-                <div className="bg-[#F5F5F0] rounded-3xl overflow-hidden transition-all duration-300 group-hover:shadow-2xl group-hover:shadow-amber-500/20 group-hover:-translate-y-3">
-                  {/* Image Container - Dominating Size */}
-                  <div className="relative aspect-[2/3] bg-gradient-to-b from-gray-50 to-gray-100">
-                    <img
-                      src={
-                        drink.image || "/images/firstgear-coffee/hazelnut.png"
-                      }
-                      alt={drink.name}
-                      className="w-full h-full object-cover"
-                    />
+          {/* Desktop: Carousel or Grid Layout */}
+          <div className="hidden lg:block relative">
+            {showCarousel ? (
+              /* Carousel Mode - More than 4 items */
+              <div className="relative px-16">
+                {/* Navigation Arrows */}
+                <button
+                  onClick={() => scroll("left")}
+                  disabled={currentIndex === 0}
+                  className={`absolute -left-2 top-1/3 -translate-y-1/2 z-10 w-12 h-12 bg-[#F16D34] hover:bg-[#ff7a3d] rounded-full flex items-center justify-center transition-all duration-300 shadow-lg ${
+                    currentIndex === 0
+                      ? "opacity-0 pointer-events-none"
+                      : "opacity-100 hover:scale-110"
+                  }`}
+                  aria-label="Previous"
+                >
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="white"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M15 18l-6-6 6-6" />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => scroll("right")}
+                  disabled={currentIndex >= maxIndex}
+                  className={`absolute -right-2 top-1/3 -translate-y-1/2 z-10 w-12 h-12 bg-[#F16D34] hover:bg-[#ff7a3d] rounded-full flex items-center justify-center transition-all duration-300 shadow-lg ${
+                    currentIndex >= maxIndex
+                      ? "opacity-0 pointer-events-none"
+                      : "opacity-100 hover:scale-110"
+                  }`}
+                  aria-label="Next"
+                >
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="white"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M9 18l6-6-6-6" />
+                  </svg>
+                </button>
+
+                {/* Carousel Container */}
+                <div className="overflow-hidden">
+                  <div
+                    className="flex gap-8 lg:gap-10 transition-transform duration-700 ease-in-out"
+                    style={{
+                      transform: `translateX(-${currentIndex * 25}%)`,
+                    }}
+                  >
+                    {displayDrinks.map((drink) => (
+                      <div
+                        key={drink.id}
+                        className="group relative flex-shrink-0"
+                        style={{ width: "calc(25% - 30px)" }}
+                      >
+                        {/* Card */}
+                        <div className="bg-[#F5F5F0] rounded-3xl overflow-hidden transition-all duration-300 group-hover:shadow-2xl group-hover:shadow-amber-500/20 group-hover:-translate-y-3">
+                          <div className="relative aspect-[2/3] bg-gradient-to-b from-gray-50 to-gray-100">
+                            <img
+                              src={
+                                drink.image ||
+                                "/images/firstgear-coffee/hazelnut.png"
+                              }
+                              alt={drink.name}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Coffee Title Below Card */}
+                        <div className="text-center mt-6">
+                          <h3
+                            className="text-white text-xl md:text-2xl lg:text-3xl uppercase tracking-wide"
+                            style={{ fontFamily: "Tanker, sans-serif" }}
+                          >
+                            {drink.name}
+                          </h3>
+                          <p
+                            className="text-gray-400 text-sm md:text-base leading-relaxed mt-2 px-2"
+                            style={{
+                              fontFamily: "Inter Display, sans-serif",
+                              fontWeight: 500,
+                            }}
+                          >
+                            {drink.description}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
-                {/* Coffee Title Below Card */}
-                <div className="text-center mt-6">
-                  <h3
-                    className="text-white text-xl md:text-2xl lg:text-3xl uppercase tracking-wide"
-                    style={{ fontFamily: "Tanker, sans-serif" }}
-                  >
-                    {drink.name}
-                  </h3>
-                  <p
-                    className="text-gray-400 text-sm md:text-base leading-relaxed mt-2 px-2"
-                    style={{
-                      fontFamily: "Inter Display, sans-serif",
-                      fontWeight: 500,
-                    }}
-                  >
-                    {drink.description}
-                  </p>
+                {/* Carousel Indicators */}
+                <div className="flex justify-center gap-2 mt-8">
+                  {Array.from({ length: maxIndex + 1 }).map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentIndex(index)}
+                      className={`h-2 rounded-full transition-all duration-300 ${
+                        currentIndex === index
+                          ? "w-8 bg-[#F16D34]"
+                          : "w-2 bg-gray-600 hover:bg-gray-500"
+                      }`}
+                      aria-label={`Go to page ${index + 1}`}
+                    />
+                  ))}
                 </div>
               </div>
-            ))}
+            ) : (
+              /* Grid Mode - 4 or fewer items */
+              <div className="grid lg:grid-cols-3 gap-8 lg:gap-10">
+                {displayDrinks.map((drink) => (
+                  <div key={drink.id} className="group relative">
+                    {/* Card */}
+                    <div className="bg-[#F5F5F0] rounded-3xl overflow-hidden transition-all duration-300 group-hover:shadow-2xl group-hover:shadow-amber-500/20 group-hover:-translate-y-3">
+                      <div className="relative aspect-[2/3] bg-gradient-to-b from-gray-50 to-gray-100">
+                        <img
+                          src={
+                            drink.image ||
+                            "/images/firstgear-coffee/hazelnut.png"
+                          }
+                          alt={drink.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Coffee Title Below Card */}
+                    <div className="text-center mt-6">
+                      <h3
+                        className="text-white text-xl md:text-2xl lg:text-3xl uppercase tracking-wide"
+                        style={{ fontFamily: "Tanker, sans-serif" }}
+                      >
+                        {drink.name}
+                      </h3>
+                      <p
+                        className="text-gray-400 text-sm md:text-base leading-relaxed mt-2 px-2"
+                        style={{
+                          fontFamily: "Inter Display, sans-serif",
+                          fontWeight: 500,
+                        }}
+                      >
+                        {drink.description}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Subheading - Bottom */}
@@ -232,10 +377,36 @@ export default function CoffeeShowcase({
             >
               {content.description}
             </p>
-            <button className="bg-[#F16D34] hover:bg-[#ff7a3d] text-white font-bold px-8 md:px-10 py-3 md:py-4 rounded-none transition-all duration-300 inline-flex items-center gap-2 md:gap-3 group text-base md:text-lg">
-              <a
+
+            {/* View All Button or CTA Button */}
+            {hasMoreItems ? (
+              <Link
+                href="/menu"
+                className="bg-[#F16D34] hover:bg-[#ff7a3d] text-white font-bold px-8 md:px-10 py-3 md:py-4 rounded-none transition-all duration-300 inline-flex items-center gap-2 md:gap-3 group text-base md:text-lg"
+                style={{
+                  fontFamily: "Inter Display, sans-serif",
+                  fontWeight: 500,
+                }}
+              >
+                <span>View All {totalItems} Drinks</span>
+                <svg
+                  className="w-5 h-5 md:w-6 md:h-6 transform group-hover:translate-x-1 transition-transform"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 8l4 4m0 0l-4 4m4-4H3"
+                  />
+                </svg>
+              </Link>
+            ) : (
+              <Link
                 href={content.ctaLink}
-                className="flex items-center gap-2 md:gap-3"
+                className="bg-[#F16D34] hover:bg-[#ff7a3d] text-white font-bold px-8 md:px-10 py-3 md:py-4 rounded-none transition-all duration-300 inline-flex items-center gap-2 md:gap-3 group text-base md:text-lg"
                 style={{
                   fontFamily: "Inter Display, sans-serif",
                   fontWeight: 500,
@@ -255,8 +426,8 @@ export default function CoffeeShowcase({
                     d="M17 8l4 4m0 0l-4 4m4-4H3"
                   />
                 </svg>
-              </a>
-            </button>
+              </Link>
+            )}
           </div>
         </div>
       </div>

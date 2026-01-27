@@ -25,17 +25,24 @@ import {
 import { getRegion } from "@lib/data/regions"
 import { getMarketingForPath } from "@lib/data/marketing"
 import { BannerSlot, PopupAds } from "@modules/marketing"
+import { fetchHomeContent } from "@lib/strapi/home"
 import {
-  getHeroContent,
-  fetchHomeContent,
-  extractHeroContent,
-} from "@lib/strapi/home"
-import { getAboutContent } from "@lib/strapi/about"
-import { getCoffeeShowcaseContent } from "@lib/strapi/coffee"
-import { getMotoServicesContent } from "@lib/strapi/services"
+  getHeroWithFallbacks,
+  getAboutWithFallbacks,
+  getCoffeeWithFallbacks,
+  getServicesWithFallbacks,
+} from "@lib/strapi/home-with-fallbacks"
+import { getShopByBrandsWithFallbacks } from "@lib/strapi/shop-by-brands"
+import { getSpaceAndExperienceWithFallbacks } from "@lib/strapi/space-and-experience"
+import { getSatisfiedCustomersWithFallbacks } from "@lib/strapi/satisfied-customers"
+import { getClientTestimonialsWithFallbacks } from "@lib/strapi/client-testimonials"
+import { getClientStoriesWithFallbacks } from "@lib/strapi/client-stories"
+import { getOurTeamWithFallbacks } from "@lib/strapi/our-team"
+import { getCTABannerWithFallbacks } from "@lib/strapi/cta-banner"
 
-// Force dynamic rendering for real-time sale price updates
-export const dynamic = "force-dynamic"
+// Use ISR with revalidation for better performance
+// This allows Strapi content changes to appear within 60 seconds
+export const revalidate = 60
 
 export const metadata: Metadata = {
   title: "Home",
@@ -77,32 +84,55 @@ export default async function Home(props: {
   // Fetch marketing content for homepage
   const marketing = await getMarketingForPath("/")
 
-  // Fetch home content from Strapi CMS (includes hero and about sections)
+  // Fetch home content from Strapi CMS with field-level fallbacks
   const homeContent = await fetchHomeContent()
-  const heroContent = homeContent ? extractHeroContent(homeContent) : null
-  const aboutContent = getAboutContent(homeContent)
-  const coffeeContent = getCoffeeShowcaseContent(homeContent)
-  const servicesContent = getMotoServicesContent(homeContent)
+  const heroContent = await getHeroWithFallbacks()
+  const aboutContent = await getAboutWithFallbacks(homeContent)
+  const coffeeContent = await getCoffeeWithFallbacks(homeContent)
+  const servicesContent = await getServicesWithFallbacks(homeContent)
+  const shopByBrandsContent = getShopByBrandsWithFallbacks(homeContent)
+  const spaceAndExperienceContent =
+    getSpaceAndExperienceWithFallbacks(homeContent)
+  const satisfiedCustomersContent =
+    getSatisfiedCustomersWithFallbacks(homeContent)
+  const clientTestimonialsContent =
+    getClientTestimonialsWithFallbacks(homeContent)
+  const clientStoriesContent = getClientStoriesWithFallbacks(homeContent)
+  const ourTeamContent = getOurTeamWithFallbacks(homeContent)
+  const ctaBannerContent = getCTABannerWithFallbacks(homeContent)
 
   // Debug logging
-  console.log("[HomePage] About content from Strapi:", aboutContent)
-  console.log("[HomePage] Coffee content from Strapi:", coffeeContent)
-  console.log("[HomePage] Services content from Strapi:", servicesContent)
+  console.log("[HomePage] Hero content with fallbacks:", heroContent)
+  console.log("[HomePage] About content with fallbacks:", aboutContent)
+  console.log("[HomePage] Coffee content with fallbacks:", coffeeContent)
+  console.log("[HomePage] Services content with fallbacks:", servicesContent)
+  console.log(
+    "[HomePage] Shop by brands content with fallbacks:",
+    shopByBrandsContent
+  )
+  console.log(
+    "[HomePage] Space and experience content with fallbacks:",
+    spaceAndExperienceContent
+  )
 
   return (
     <>
       {/* Hero Section */}
       <Hero
-        trustBadge={heroContent?.trustBadge}
-        title={heroContent?.title}
-        description={heroContent?.description}
-        primaryCta={heroContent?.primaryCta}
-        secondaryCta={heroContent?.secondaryCta}
-        backgroundImage={heroContent?.backgroundImage}
+        trustBadge={heroContent.trustBadge}
+        title={heroContent.title}
+        description={heroContent.description}
+        primaryCta={heroContent.primaryCta}
+        secondaryCta={heroContent.secondaryCta}
+        backgroundImage={heroContent.backgroundImage}
       />
 
       {/* Shop By Brands Section */}
-      <ShopByBrands />
+      <ShopByBrands
+        sectionTitle={shopByBrandsContent.sectionTitle}
+        brands={shopByBrandsContent.brands}
+        showNavDesktop={shopByBrandsContent.showNavDesktop}
+      />
 
       {/* Top Banner Slot */}
       <BannerSlot
@@ -113,14 +143,14 @@ export default async function Home(props: {
 
       {/* About Section */}
       <AboutSection
-        kicker={aboutContent?.kicker}
-        title={aboutContent?.title}
-        description={aboutContent?.description}
-        highlights={aboutContent?.highlights}
-        primaryCta={aboutContent?.primaryCta}
-        imageTop={aboutContent?.imageTop}
-        imageBottom={aboutContent?.imageBottom}
-        videoUrl={aboutContent?.videoUrl}
+        kicker={aboutContent.kicker}
+        title={aboutContent.title}
+        description={aboutContent.description}
+        highlights={aboutContent.highlights}
+        primaryCta={aboutContent.primaryCta}
+        imageTop={aboutContent.imageTop}
+        imageBottom={aboutContent.imageBottom}
+        videoUrl={aboutContent.videoUrl}
       />
 
       {/* Shop By Categories */}
@@ -150,50 +180,74 @@ export default async function Home(props: {
 
       {/* Coffee Showcase */}
       <CoffeeShowcase
-        mainHeadingLine1={coffeeContent?.mainHeadingLine1}
-        highlightedWord={coffeeContent?.highlightedWord}
-        mainHeadingLine2={coffeeContent?.mainHeadingLine2}
-        descriptionText={coffeeContent?.descriptionText}
-        buttonText={coffeeContent?.buttonText}
-        buttonLink={coffeeContent?.buttonLink}
-        coffeeItems={coffeeContent?.coffeeItems}
+        mainHeadingLine1={coffeeContent.mainHeadingLine1}
+        highlightedWord={coffeeContent.highlightedWord}
+        mainHeadingLine2={coffeeContent.mainHeadingLine2}
+        descriptionText={coffeeContent.descriptionText}
+        buttonText={coffeeContent.buttonText}
+        buttonLink={coffeeContent.buttonLink}
+        coffeeItems={coffeeContent.coffeeItems}
       />
 
       {/* Our Services */}
-      {servicesContent ? (
-        <OurServices
-          sectionTitle={servicesContent.sectionTitle}
-          sectionDescription={servicesContent.sectionDescription}
-          services={servicesContent.services}
-        />
-      ) : (
-        <OurServices />
-      )}
+      <OurServices
+        sectionTitle={servicesContent.sectionTitle}
+        sectionDescription={servicesContent.sectionDescription}
+        services={servicesContent.services}
+      />
 
       {/* Project Section */}
-      <ProjectsSection />
+      <ProjectsSection
+        sectionTitle={spaceAndExperienceContent.sectionTitle}
+        sectionDescription={spaceAndExperienceContent.sectionDescription}
+        items={spaceAndExperienceContent.items}
+      />
 
       {/* <Stats/> */}
 
       <Brands />
 
       {/* satisfied customers */}
-      <SatisfiedCustomers />
+      <SatisfiedCustomers
+        sectionTitle={satisfiedCustomersContent.sectionTitle}
+        row1={satisfiedCustomersContent.row1}
+        row2={satisfiedCustomersContent.row2}
+      />
 
       {/* Franchise Section */}
       <Franchise />
 
       {/* Our Team Section */}
-      <OurTeam />
+      <OurTeam
+        sectionTitle={ourTeamContent.sectionTitle}
+        sectionDescription={ourTeamContent.sectionDescription}
+        teamMembers={ourTeamContent.teamMembers}
+      />
 
       {/* Client Testimonials */}
-      <ClientTestimonials />
+      <ClientTestimonials
+        sectionTitle={clientTestimonialsContent.sectionTitle}
+        sectionDescription={clientTestimonialsContent.sectionDescription}
+        testimonials={clientTestimonialsContent.testimonials}
+      />
 
       {/* Client Stories */}
-      <ClientStories />
+      <ClientStories
+        sectionTitle={clientStoriesContent.sectionTitle}
+        sectionDescription={clientStoriesContent.sectionDescription}
+        stories={clientStoriesContent.stories}
+      />
 
       {/* CTA Banner - Opening Hours */}
-      <CTABanner />
+      {ctaBannerContent.isEnabled && (
+        <CTABanner
+          title={ctaBannerContent.title}
+          description={ctaBannerContent.description}
+          backgroundImage={ctaBannerContent.backgroundImage}
+          openingHours={ctaBannerContent.openingHours}
+          socialLinks={ctaBannerContent.socialLinks}
+        />
+      )}
 
       {/* Store Location */}
       <StoreLocation />

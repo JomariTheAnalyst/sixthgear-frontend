@@ -7,8 +7,19 @@
  */
 
 import PolaroidCard from "./PolaroidCard"
-import { customerRows } from "./rows.data"
 import styles from "./polaroid.module.css"
+
+interface CustomerItem {
+  id: number
+  name: string
+  imageUrl: string
+}
+
+interface SatisfiedCustomersProps {
+  sectionTitle?: string
+  row1?: CustomerItem[]
+  row2?: CustomerItem[]
+}
 
 // Generate random rotation for each card (-3 to 3 degrees)
 const getRotation = (index: number) => {
@@ -16,7 +27,29 @@ const getRotation = (index: number) => {
   return rotations[index % rotations.length]
 }
 
-export default function SatisfiedCustomers() {
+export default function SatisfiedCustomers({
+  sectionTitle = "Sixthgear Satisfied Customers",
+  row1 = [],
+  row2 = [],
+}: SatisfiedCustomersProps) {
+  // Don't render if both rows are empty
+  if (row1.length === 0 && row2.length === 0) {
+    return null
+  }
+
+  const rows = [
+    {
+      direction: "left" as const,
+      speedSec: 45,
+      items: row1,
+    },
+    {
+      direction: "right" as const,
+      speedSec: 50,
+      items: row2,
+    },
+  ].filter((row) => row.items.length > 0) // Only include rows with items
+
   return (
     <section className="relative">
       {/* Top Paper Cut */}
@@ -37,13 +70,13 @@ export default function SatisfiedCustomers() {
               className="text-4xl md:text-6xl lg:text-7xl text-white"
               style={{ fontFamily: "Tanker, sans-serif" }}
             >
-              Sixthgear Satisfied Customers
+              {sectionTitle}
             </h2>
           </div>
 
           {/* Marquee Rows */}
           <div className="space-y-6 md:space-y-8">
-            {customerRows.map((row, rowIndex) => (
+            {rows.map((row, rowIndex) => (
               <div key={rowIndex} className="overflow-hidden">
                 <div
                   className={`
@@ -62,16 +95,16 @@ export default function SatisfiedCustomers() {
                   {/* Original items */}
                   {row.items.map((item, itemIndex) => (
                     <PolaroidCard
-                      key={`original-${itemIndex}`}
-                      item={item}
+                      key={`original-${item.id}-${itemIndex}`}
+                      item={{ image: item.imageUrl, label: item.name }}
                       rotation={getRotation(itemIndex)}
                     />
                   ))}
                   {/* Duplicated items for seamless loop */}
                   {row.items.map((item, itemIndex) => (
                     <PolaroidCard
-                      key={`duplicate-${itemIndex}`}
-                      item={item}
+                      key={`duplicate-${item.id}-${itemIndex}`}
+                      item={{ image: item.imageUrl, label: item.name }}
                       rotation={getRotation(itemIndex)}
                     />
                   ))}

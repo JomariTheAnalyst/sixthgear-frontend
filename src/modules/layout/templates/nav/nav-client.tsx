@@ -29,7 +29,12 @@ interface NavClientProps {
   customer: HttpTypes.StoreCustomer | null
 }
 
-const NavClient = ({ regions, cart, servicesData, customer }: NavClientProps) => {
+const NavClient = ({
+  regions,
+  cart,
+  servicesData,
+  customer,
+}: NavClientProps) => {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isServicesOpen, setIsServicesOpen] = useState(false)
   const servicesTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -49,6 +54,11 @@ const NavClient = ({ regions, cart, servicesData, customer }: NavClientProps) =>
     window.addEventListener("scroll", handleScroll)
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
+
+  // Close dropdown when pathname changes (navigation occurs)
+  useEffect(() => {
+    setIsServicesOpen(false)
+  }, [pathname])
 
   // Helper to get initials
   const getInitials = () => {
@@ -70,10 +80,21 @@ const NavClient = ({ regions, cart, servicesData, customer }: NavClientProps) =>
     servicesTimeoutRef.current = setTimeout(() => setIsServicesOpen(false), 200)
   }
 
+  const handleDropdownClick = () => {
+    setIsServicesOpen(false)
+  }
+
   return (
     <>
-      <div className={`sticky top-10 inset-x-0 z-50 bg-white transition-all duration-300 ${isScrolled ? "shadow-md" : ""}`}>
-        <header ref={headerRef} className="relative mx-auto border-b border-gray-100 bg-white">
+      <div
+        className={`sticky top-10 inset-x-0 z-50 bg-white transition-all duration-300 ${
+          isScrolled ? "shadow-md" : ""
+        }`}
+      >
+        <header
+          ref={headerRef}
+          className="relative mx-auto border-b border-gray-100 bg-white"
+        >
           <nav className="content-container w-full h-full flex flex-col">
             {/* Top Bar: Search - Logo - Account/Cart */}
             <div className="flex items-center justify-between py-4 border-b border-gray-100/50">
@@ -83,8 +104,19 @@ const NavClient = ({ regions, cart, servicesData, customer }: NavClientProps) =>
                 <div className="md:hidden flex items-center gap-1">
                   <MobileMenu regions={regions} navLinks={navLinks} />
                   <button className="p-2 text-gray-900 hover:text-[#F16D34] transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={1.5}
+                      stroke="currentColor"
+                      className="w-5 h-5"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
+                      />
                     </svg>
                   </button>
                 </div>
@@ -96,7 +128,10 @@ const NavClient = ({ regions, cart, servicesData, customer }: NavClientProps) =>
 
               {/* Center: Logo - Single Line */}
               <div className="flex-1 flex justify-center px-2">
-                <LocalizedClientLink href="/" className="flex items-center justify-center whitespace-nowrap">
+                <LocalizedClientLink
+                  href="/"
+                  className="flex items-center justify-center whitespace-nowrap"
+                >
                   <Logo />
                 </LocalizedClientLink>
               </div>
@@ -113,8 +148,19 @@ const NavClient = ({ regions, cart, servicesData, customer }: NavClientProps) =>
                       {getInitials()}
                     </div>
                   ) : (
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 md:w-6 md:h-6">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={1.5}
+                      stroke="currentColor"
+                      className="w-5 h-5 md:w-6 md:h-6"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"
+                      />
                     </svg>
                   )}
                 </LocalizedClientLink>
@@ -133,17 +179,27 @@ const NavClient = ({ regions, cart, servicesData, customer }: NavClientProps) =>
                   <li
                     key={link.name}
                     className="relative"
-                    onMouseEnter={() => link.hasDropdown && handleServicesEnter()}
-                    onMouseLeave={() => link.hasDropdown && handleServicesLeave()}
+                    onMouseEnter={() =>
+                      link.hasDropdown && handleServicesEnter()
+                    }
+                    onMouseLeave={() =>
+                      link.hasDropdown && handleServicesLeave()
+                    }
                   >
                     <LocalizedClientLink
                       href={link.href}
-                      className={`relative px-2 py-1 text-sm font-bold uppercase tracking-wider transition-colors duration-200 group flex items-center gap-1 ${link.hasDropdown && isServicesOpen ? 'text-[#F16D34]' : textClasses}`}
+                      className={`relative px-2 py-1 text-sm font-bold uppercase tracking-wider transition-colors duration-200 group flex items-center gap-1 ${
+                        link.hasDropdown && isServicesOpen
+                          ? "text-[#F16D34]"
+                          : textClasses
+                      }`}
                     >
                       {link.name}
                       {link.hasDropdown && (
                         <svg
-                          className={`w-3 h-3 transition-transform duration-200 ${isServicesOpen ? "rotate-180" : ""}`}
+                          className={`w-3 h-3 transition-transform duration-200 ${
+                            isServicesOpen ? "rotate-180" : ""
+                          }`}
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -170,13 +226,15 @@ const NavClient = ({ regions, cart, servicesData, customer }: NavClientProps) =>
 
       {/* Services Dropdown - Rendered Outside Header for Full Width with Smooth Animation */}
       <div
-        className={`fixed inset-x-0 z-[100] bg-white shadow-2xl border-t border-gray-100 transition-all duration-700 ease-[cubic-bezier(0.25,0.1,0.25,1.0)] transform ${isServicesOpen
+        className={`fixed inset-x-0 z-[100] bg-white shadow-2xl border-t border-gray-100 transition-all duration-700 ease-[cubic-bezier(0.25,0.1,0.25,1.0)] transform ${
+          isServicesOpen
             ? "opacity-100 translate-y-0 visible"
             : "opacity-0 -translate-y-4 invisible pointer-events-none"
-          }`}
+        }`}
         style={{ top: headerRef.current?.getBoundingClientRect().bottom || 0 }}
         onMouseEnter={handleServicesEnter}
         onMouseLeave={handleServicesLeave}
+        onClick={handleDropdownClick}
       >
         <ServicesDropdown />
       </div>
