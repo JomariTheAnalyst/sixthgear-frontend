@@ -4,6 +4,7 @@ import { companyData } from "@lib/company-data"
 import Image from "next/image"
 import { useState } from "react"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import { ServiceCategory } from "@lib/services-data"
 
 // Popular services to tag
 const popularServices = [
@@ -13,33 +14,15 @@ const popularServices = [
   "Tyre Replacement & Wheel Balancing",
 ]
 
-const ServicesDropdown = () => {
+interface ServicesDropdownProps {
+  servicesData: ServiceCategory[]
+}
+
+const ServicesDropdown = ({ servicesData }: ServicesDropdownProps) => {
   const [activeCategoryIndex, setActiveCategoryIndex] = useState(0)
-  const categories = companyData.servicesOffered
 
-  // Map category titles to their slugs from services-data.ts
-  const getCategorySlug = (title: string) => {
-    const slugMap: Record<string, string> = {
-      "Service & Preventive Maintenance": "preventive-maintenance",
-      "Repairs & Diagnostics": "repairs-diagnostics",
-      "Accessories & Custom Installation": "accessories-installation",
-      "Wheels, Drivetrain & Handling": "wheels-drivetrain",
-      "Detailing, Care & Protection": "detailing-protection",
-      "Performance & Upgrade Services": "performance-upgrades",
-      "Roadside Assistance & Recovery": "roadside-assistance",
-      "Rider Support & Convenience": "rider-support",
-    }
-
-    const cleanTitle = title.replace(/[\u{1F300}-\u{1F9FF}]/gu, "").trim()
-    return (
-      slugMap[cleanTitle] ||
-      cleanTitle
-        .toLowerCase()
-        .replace(/[^\w\s-]/g, "")
-        .replace(/\s+/g, "-")
-        .trim()
-    )
-  }
+  // Use CMS services data (already sorted by order from Strapi)
+  const categories = servicesData
 
   return (
     <div className="bg-white w-full">
@@ -54,25 +37,20 @@ const ServicesDropdown = () => {
                 Services Category
               </h3>
               <div className="flex flex-col gap-0.5">
-                {categories.map((service, index) => {
-                  const categorySlug = getCategorySlug(service.title)
-                  return (
-                    <LocalizedClientLink
-                      key={index}
-                      href={`/services/${categorySlug}`}
-                      onMouseEnter={() => setActiveCategoryIndex(index)}
-                      className={`text-left px-3 py-2 text-sm font-semibold transition-all duration-150 ${
-                        activeCategoryIndex === index
-                          ? "text-gray-900 bg-gray-50"
-                          : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
-                      }`}
-                    >
-                      {service.title
-                        .replace(/[\u{1F300}-\u{1F9FF}]/gu, "")
-                        .trim()}
-                    </LocalizedClientLink>
-                  )
-                })}
+                {categories.map((service, index) => (
+                  <LocalizedClientLink
+                    key={service.id}
+                    href={`/services/${service.slug}`}
+                    onMouseEnter={() => setActiveCategoryIndex(index)}
+                    className={`text-left px-3 py-2 text-sm font-semibold transition-all duration-150 ${
+                      activeCategoryIndex === index
+                        ? "text-gray-900 bg-gray-50"
+                        : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+                    }`}
+                  >
+                    {service.title}
+                  </LocalizedClientLink>
+                ))}
               </div>
               <div className="mt-6 px-3">
                 <LocalizedClientLink
@@ -89,14 +67,12 @@ const ServicesDropdown = () => {
               {/* Header */}
               <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-100">
                 <h2 className="text-lg font-black uppercase tracking-tight text-gray-900">
-                  {categories[activeCategoryIndex].title
-                    .replace(/[\u{1F300}-\u{1F9FF}]/gu, "")
-                    .trim()}
+                  {categories[activeCategoryIndex]?.title || "Services"}
                 </h2>
                 <LocalizedClientLink
-                  href={`/services/${getCategorySlug(
-                    categories[activeCategoryIndex].title
-                  )}`}
+                  href={`/services/${
+                    categories[activeCategoryIndex]?.slug || ""
+                  }`}
                   className="text-xs font-bold text-[#F16D34] hover:text-[#d95a2b] transition-colors uppercase tracking-wider"
                 >
                   View All →
@@ -105,17 +81,14 @@ const ServicesDropdown = () => {
 
               {/* Service Items Grid - 3 columns, compact */}
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-                {categories[activeCategoryIndex].items
+                {categories[activeCategoryIndex]?.items
                   .slice(0, 6)
                   .map((item, i) => {
                     const isPopular = popularServices.includes(item)
-                    const categorySlug = getCategorySlug(
-                      categories[activeCategoryIndex].title
-                    )
                     return (
                       <LocalizedClientLink
                         key={i}
-                        href={`/services/${categorySlug}`}
+                        href={`/services/${categories[activeCategoryIndex].slug}`}
                         className="group relative p-3 rounded-lg border border-gray-100 hover:border-gray-200 hover:shadow-sm bg-white transition-all duration-200"
                       >
                         {isPopular && (

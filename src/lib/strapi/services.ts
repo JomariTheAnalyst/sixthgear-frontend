@@ -1,133 +1,306 @@
 /**
- * Strapi Moto Services Content Fetcher
- *
- * Fetches moto services section content from Strapi CMS for the homepage.
+ * Strapi Services Integration
+ * Fetches service data from Strapi CMS with fallback to local data
+ * Supports separate hero and detail images
  */
 
-import { StrapiImage } from "./home"
+import {
+  ServiceCategory,
+  servicesData,
+  getServiceBySlug as getLocalServiceBySlug,
+  getAllServiceSlugs as getLocalServiceSlugs,
+} from "@lib/services-data"
 
-// Type definitions for Moto Services block (Strapi v5 structure)
-export interface ServiceItem {
+const STRAPI_URL =
+  process.env.NEXT_PUBLIC_STRAPI_URL ||
+  process.env.STRAPI_URL ||
+  "http://localhost:1337"
+
+// Strapi response types
+interface StrapiImage {
+  id: number
+  url: string
+  formats?: {
+    small?: { url: string }
+    medium?: { url: string }
+    large?: { url: string }
+  }
+}
+
+interface StrapiServiceItem {
   id: number
   services_name: string
-  services_description: string
-  services_image: StrapiImage | null
-  enabled: boolean
+  services_description?: string
+  is_popular?: boolean
 }
 
-export interface MotoServicesBlock {
-  __component: "sections.moto-services"
+interface StrapiService {
   id: number
-  section_title: string
-  section_description: string
-  enabled: boolean
-  services: ServiceItem[]
-}
-
-export interface MotoServicesContent {
-  sectionTitle: string
-  sectionDescription: string
-  services: Array<{
-    id: number
-    title: string
-    description: string
-    image: string | null
-  }>
+  title: string
+  short_title: string
+  slug: string
+  description: string
+  image?: StrapiImage
+  hero_image?: StrapiImage
+  detail_image?: StrapiImage
+  services_item?: StrapiServiceItem[]
+  order?: number
+  is_active?: boolean
 }
 
 /**
- * Resolve Strapi image URL to absolute URL
- *
- * @param url - Image URL from Strapi (can be relative or absolute)
- * @returns Absolute image URL
+ * Get best image URL from Strapi image object
+ * Prefers medium, then large, then small, then original
+ * Returns undefined if no image exists
  */
-function resolveImageUrl(url: string | null | undefined): string | null {
-  if (!url) return null
+function getBestImageUrl(
+  image: StrapiImage | undefined | null
+): string | undefined {
+  if (!image) return undefined
 
-  // If already absolute URL, return as-is
-  if (url.startsWith("http://") || url.startsWith("https://")) {
-    return url
+  // Try formats in order of preference
+  const url =
+    image.formats?.medium?.url ||
+    image.formats?.large?.url ||
+    image.formats?.small?.url ||
+    image.url
+
+  if (!url) return undefined
+
+  // If URL is relative, prefix with Strapi URL
+  if (url.startsWith("/")) {
+    return `${STRAPI_URL}${url}`
   }
 
-  // If relative URL, prefix with STRAPI_URL
-  const strapiUrl = process.env.STRAPI_URL || "http://localhost:1337"
-  return `${strapiUrl}${url.startsWith("/") ? "" : "/"}${url}`
+  return url
 }
 
 /**
- * Extract moto services content from home page data
- *
- * @param homeContent - Full home page content from Strapi
- * @returns Formatted moto services content or null if not found/disabled
+ * Map Strapi service to local ServiceCategory format
+ * Handles hero_image and detail_image with fallbacks
  */
-export function extractMotoServicesContent(
-  homeContent: any
-): MotoServicesContent | null {
-  if (!homeContent?.data?.blocks) {
-    console.log("[extractMotoServices] No blocks found in homeContent")
-    return null
+function mapStrapiToService(item: StrapiService): ServiceCategory {
+  // Extract image URLs
+  const hero = getBestImageUrl(item.hero_image)
+  const detail = getBestImageUrl(item.detail_image)
+  const legacy = getBestImageUrl(item.image)
+
+  return {
+    id: item.slug || String(item.id),
+    slug: item.slug,
+    title: item.title,
+    shortTitle: item.short_title || item.title,
+    description: item.description,
+    image: legacy || "", // Keep for backward compatibility
+    heroImage: hero || legacy || "", // Fallback to legacy image
+    detailImage: detail || legacy || "", // Fallback to legacy image
+    items: (item.services_item || []).map((si) => si.services_name),
   }
-
-  // Find the moto-services block that is enabled
-  const servicesBlock = homeContent.data.blocks.find(
-    (block: any): block is MotoServicesBlock =>
-      block.__component === "sections.moto-services" && block.enabled === true
-  )
-
-  if (!servicesBlock) {
-    console.log("[extractMotoServices] No enabled moto-services block found")
-    return null
-  }
-
-  console.log("[extractMotoServices] Found services block:", {
-    section_title: servicesBlock.section_title,
-    servicesCount: servicesBlock.services?.length || 0,
-  })
-
-  // Filter and transform service items (only enabled ones)
-  const services =
-    servicesBlock.services
-      ?.filter((service) => service.enabled !== false)
-      .map((service) => ({
-        id: service.id,
-        title: service.services_name,
-        description: service.services_description,
-        image: service.services_image
-          ? resolveImageUrl(service.services_image.url)
-          : null,
-      })) || []
-
-  // Transform to frontend format
-  const result: MotoServicesContent = {
-    sectionTitle: servicesBlock.section_title,
-    sectionDescription: servicesBlock.section_description,
-    services,
-  }
-
-  console.log(
-    "[extractMotoServices] Returning result with",
-    services.length,
-    "enabled services"
-  )
-  return result
 }
 
 /**
- * Get moto services content with fallback
- *
- * Fetches moto services content from Strapi and returns formatted data.
- * Returns null if CMS is unavailable or content is disabled.
- *
- * @param homeContent - Home content already fetched (to avoid duplicate requests)
- * @returns Moto services content or null for fallback
+ * Fetch all services from Strapi
+ * Returns null if fetch fails
  */
-export function getMotoServicesContent(
-  homeContent: any
-): MotoServicesContent | null {
+async function fetchServicesFromStrapi(): Promise<ServiceCategory[] | null> {
   try {
-    return extractMotoServicesContent(homeContent)
+    const url = `${STRAPI_URL}/api/services?filters[is_active][$eq]=true&sort=order:asc&populate=*`
+
+    console.log("[Strapi Services] Fetching from:", url)
+
+    const response = await fetch(url, {
+      next: { revalidate: 60 }, // Cache for 60 seconds
+    })
+
+    if (!response.ok) {
+      console.error(
+        "[Strapi Services] Fetch failed:",
+        response.status,
+        response.statusText
+      )
+      return null
+    }
+
+    const data = await response.json()
+
+    if (!data.data || !Array.isArray(data.data)) {
+      console.error("[Strapi Services] Invalid response format")
+      return null
+    }
+
+    // Map Strapi data to local format
+    const services = data.data.map((item: any) => {
+      // Handle both nested and flat response formats
+      const attributes = item.attributes || item
+      return mapStrapiToService({
+        id: item.id,
+        ...attributes,
+      })
+    })
+
+    console.log(`[Strapi Services] Fetched ${services.length} services`)
+    return services
   } catch (error) {
-    console.error("[Strapi] Error getting moto services content:", error)
+    console.error("[Strapi Services] Error fetching services:", error)
     return null
   }
+}
+
+/**
+ * Fetch single service by slug from Strapi
+ * Returns null if fetch fails or service not found
+ * Only returns active services (is_active=true)
+ */
+async function fetchServiceBySlugFromStrapi(
+  slug: string
+): Promise<ServiceCategory | null> {
+  try {
+    const url = `${STRAPI_URL}/api/services?filters[slug][$eq]=${slug}&filters[is_active][$eq]=true&populate=*`
+
+    console.log("[Strapi Services] Fetching service by slug:", slug)
+
+    const response = await fetch(url, {
+      next: { revalidate: 60 }, // Cache for 60 seconds
+    })
+
+    if (!response.ok) {
+      console.error(
+        "[Strapi Services] Fetch failed:",
+        response.status,
+        response.statusText
+      )
+      return null
+    }
+
+    const data = await response.json()
+
+    if (!data.data || !Array.isArray(data.data) || data.data.length === 0) {
+      console.log("[Strapi Services] Service not found:", slug)
+      return null
+    }
+
+    // Get first matching service
+    const item = data.data[0]
+    const attributes = item.attributes || item
+    const service = mapStrapiToService({
+      id: item.id,
+      ...attributes,
+    })
+
+    console.log("[Strapi Services] Found service:", service.title)
+    console.log("[Strapi Services] Hero image:", service.heroImage ? "✓" : "✗")
+    console.log(
+      "[Strapi Services] Detail image:",
+      service.detailImage ? "✓" : "✗"
+    )
+    return service
+  } catch (error) {
+    console.error("[Strapi Services] Error fetching service by slug:", error)
+    return null
+  }
+}
+
+/**
+ * Get all service slugs from Strapi
+ * Returns null if fetch fails
+ */
+async function getAllServiceSlugsFromStrapi(): Promise<string[] | null> {
+  try {
+    const url = `${STRAPI_URL}/api/services?filters[is_active][$eq]=true&fields[0]=slug&pagination[pageSize]=1000`
+
+    console.log("[Strapi Services] Fetching slugs")
+
+    const response = await fetch(url, {
+      next: { revalidate: 300 }, // Cache for 5 minutes
+    })
+
+    if (!response.ok) {
+      console.error("[Strapi Services] Fetch slugs failed:", response.status)
+      return null
+    }
+
+    const data = await response.json()
+
+    if (!data.data || !Array.isArray(data.data)) {
+      console.error("[Strapi Services] Invalid slugs response format")
+      return null
+    }
+
+    const slugs = data.data
+      .map((item: any) => {
+        const attributes = item.attributes || item
+        return attributes.slug
+      })
+      .filter(Boolean)
+
+    console.log(`[Strapi Services] Fetched ${slugs.length} slugs`)
+    return slugs
+  } catch (error) {
+    console.error("[Strapi Services] Error fetching slugs:", error)
+    return null
+  }
+}
+
+/**
+ * Get all services with fallback to local data
+ * This is the main function to use in pages
+ */
+export async function getAllServices(): Promise<ServiceCategory[]> {
+  const strapiServices = await fetchServicesFromStrapi()
+
+  if (strapiServices && strapiServices.length > 0) {
+    console.log("[Strapi Services] Using Strapi data")
+    return strapiServices
+  }
+
+  console.log("[Strapi Services] Using fallback local data")
+  // Add heroImage and detailImage to fallback data
+  return servicesData.map((service) => ({
+    ...service,
+    heroImage: service.image,
+    detailImage: service.image,
+  }))
+}
+
+/**
+ * Get single service by slug with fallback to local data
+ * This is the main function to use in pages
+ */
+export async function getService(
+  slug: string
+): Promise<ServiceCategory | undefined> {
+  const strapiService = await fetchServiceBySlugFromStrapi(slug)
+
+  if (strapiService) {
+    console.log("[Strapi Services] Using Strapi service data")
+    return strapiService
+  }
+
+  console.log("[Strapi Services] Using fallback local service data")
+  const localService = getLocalServiceBySlug(slug)
+  if (localService) {
+    // Add heroImage and detailImage to fallback data
+    return {
+      ...localService,
+      heroImage: localService.image,
+      detailImage: localService.image,
+    }
+  }
+  return undefined
+}
+
+/**
+ * Get all service slugs with fallback to local data
+ * This is the main function to use in generateStaticParams
+ */
+export async function getAllServiceSlugs(): Promise<string[]> {
+  const strapiSlugs = await getAllServiceSlugsFromStrapi()
+
+  if (strapiSlugs && strapiSlugs.length > 0) {
+    console.log("[Strapi Services] Using Strapi slugs")
+    return strapiSlugs
+  }
+
+  console.log("[Strapi Services] Using fallback local slugs")
+  return getLocalServiceSlugs()
 }

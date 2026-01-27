@@ -11,6 +11,7 @@ interface ServiceCard {
   description: string
   image: string
   slug?: string
+  link?: string // Add link field from Strapi
 }
 
 interface OurServicesProps {
@@ -21,6 +22,7 @@ interface OurServicesProps {
     title: string
     description: string
     image: string | null
+    link?: string // Add link field from Strapi
   }>
 }
 
@@ -41,13 +43,74 @@ export default function OurServices({
           title: service.title,
           description: service.description,
           image: service.image || "/images/services/default.jpg",
+          link: service.link, // Use link from Strapi
         }))
-      : servicesData.map((service) => ({
-          title: service.shortTitle,
-          description: service.description,
-          image: service.image,
-          slug: service.slug,
-        })),
+      : [
+          {
+            title: "Service & Preventive Maintenance",
+            description:
+              "Scheduled servicing, PMS, and inspections to keep your motorcycle reliable, safe, and ready for daily rides or long journeys.",
+            image:
+              "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80",
+            slug: "preventive-maintenance",
+          },
+          {
+            title: "Repairs & Diagnostics",
+            description:
+              "Accurate troubleshooting and professional repairs using proper tools, experience, and diagnostics for dependable motorcycle performance.",
+            image:
+              "https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?w=800&q=80",
+            slug: "repairs-diagnostics",
+          },
+          {
+            title: "Accessories & Custom Installation",
+            description:
+              "Professional installation of accessories, electronics, protection, and touring upgrades, ensuring correct fitment, safety, and clean integration.",
+            image:
+              "https://images.unsplash.com/photo-1449426468159-d96dbf08f19f?w=800&q=80",
+            slug: "accessories-installation",
+          },
+          {
+            title: "Wheels, Drivetrain & Handling",
+            description:
+              "Tyres, chains, sprockets, and handling components serviced and aligned for stability, control, and confident riding.",
+            image:
+              "https://images.unsplash.com/photo-1571293521801-fd3dbf02a4f2?w=800&q=80",
+            slug: "wheels-drivetrain",
+          },
+          {
+            title: "Detailing, Care & Protection",
+            description:
+              "Thorough cleaning, detailing, and protective treatments to restore, preserve, and enhance your motorcycle's appearance and condition.",
+            image:
+              "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=800&q=80",
+            slug: "detailing-protection",
+          },
+          {
+            title: "Performance & Upgrade Services",
+            description:
+              "Carefully selected performance upgrades and tuning support to improve power delivery, efficiency, and overall riding experience.",
+            image:
+              "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=800&q=80",
+            slug: "performance-upgrades",
+          },
+          {
+            title: "Roadside Assistance & Recovery",
+            description:
+              "Emergency motorcycle towing, rescue, and recovery services to get you and your bike to safety when needed.",
+            image:
+              "https://images.unsplash.com/photo-1609630875171-b1321377ee65?w=800&q=80",
+            slug: "roadside-assistance",
+          },
+          {
+            title: "Rider Support & Convenience",
+            description:
+              "Consultation, inspections, and after-service support designed to help riders make informed decisions and ride with confidence.",
+            image:
+              "https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=800&q=80",
+            slug: "rider-support",
+          },
+        ],
   }
 
   // Don't render if no services
@@ -131,8 +194,10 @@ export default function OurServices({
           }}
         >
           {content.cards.map((service, index) => {
-            const linkHref = service.slug ? `/services/${service.slug}` : "#"
-            const isClickable = !!service.slug
+            // Use link from Strapi if available, otherwise construct from slug
+            const linkHref =
+              service.link || (service.slug ? `/services/${service.slug}` : "#")
+            const isClickable = !!(service.link || service.slug)
 
             const cardContent = (
               <>

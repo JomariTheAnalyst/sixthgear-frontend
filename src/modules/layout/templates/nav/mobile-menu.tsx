@@ -5,14 +5,19 @@ import { Dialog, Transition } from "@headlessui/react"
 import { StoreRegion } from "@medusajs/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import Logo from "@modules/layout/components/brand-logo"
-import { servicesData } from "@lib/services-data"
+import { ServiceCategory } from "@lib/services-data"
 
 type MobileMenuProps = {
   regions: StoreRegion[]
   navLinks: { name: string; href: string; hasDropdown?: boolean }[]
+  servicesData: ServiceCategory[]
 }
 
-export default function MobileMenu({ regions, navLinks }: MobileMenuProps) {
+export default function MobileMenu({
+  regions,
+  navLinks,
+  servicesData,
+}: MobileMenuProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isServicesExpanded, setIsServicesExpanded] = useState(false)
 
@@ -148,7 +153,7 @@ export default function MobileMenu({ regions, navLinks }: MobileMenuProps) {
                               </svg>
                             </button>
 
-                            {/* Expandable Services List */}
+                            {/* Expandable Services List - Using CMS data */}
                             {isServicesExpanded && (
                               <div className="mt-2 ml-4 space-y-1 border-l-2 border-gray-100 pl-4 animate-in slide-in-from-top-2 duration-200">
                                 {servicesData.map((service) => (

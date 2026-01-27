@@ -20,6 +20,9 @@ export default function ServiceItems({ service }: ServiceItemsProps) {
     setOpenIndex(openIndex === index ? null : index)
   }
 
+  // Use detailImage if available, fallback to image
+  const sideImage = service.detailImage || service.image
+
   return (
     <section className="bg-white py-16 md:py-24">
       <div className="max-w-7xl mx-auto px-4 md:px-8">
@@ -42,30 +45,32 @@ export default function ServiceItems({ service }: ServiceItemsProps) {
         {/* Content Layout - Image Left, Accordion Right */}
         <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
           {/* Image - Left Side */}
-          <div className="w-full lg:w-2/5">
-            <div className="relative aspect-[4/3] lg:aspect-[3/4] rounded-2xl overflow-hidden sticky top-24">
-              <Image
-                src={service.image}
-                alt={service.title}
-                fill
-                className="object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+          {sideImage && (
+            <div className="w-full lg:w-2/5">
+              <div className="relative aspect-[4/3] lg:aspect-[3/4] rounded-2xl overflow-hidden sticky top-24">
+                <Image
+                  src={sideImage}
+                  alt={service.title}
+                  fill
+                  className="object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
 
-              {/* Overlay Title */}
-              <div className="absolute bottom-0 left-0 right-0 p-6">
-                <h3
-                  className="text-white text-xl md:text-2xl uppercase"
-                  style={{ fontFamily: "Tanker, sans-serif" }}
-                >
-                  {service.title}
-                </h3>
+                {/* Overlay Title */}
+                <div className="absolute bottom-0 left-0 right-0 p-6">
+                  <h3
+                    className="text-white text-xl md:text-2xl uppercase"
+                    style={{ fontFamily: "Tanker, sans-serif" }}
+                  >
+                    {service.title}
+                  </h3>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Accordion - Right Side */}
-          <div className="w-full lg:w-3/5">
+          <div className={`w-full ${sideImage ? "lg:w-3/5" : "lg:w-full"}`}>
             <div className="space-y-3">
               {service.items.map((item, index) => (
                 <div

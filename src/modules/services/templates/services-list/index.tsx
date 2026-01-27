@@ -8,12 +8,19 @@
 import Image from "next/image"
 import Link from "next/link"
 import { useParams } from "next/navigation"
-import { servicesData } from "@lib/services-data"
+import { ServiceCategory } from "@lib/services-data"
 import CTABanner from "@modules/home/components/cta-banner"
 
-export default function ServicesListTemplate() {
+interface ServicesListTemplateProps {
+  services: ServiceCategory[]
+}
+
+export default function ServicesListTemplate({
+  services,
+}: ServicesListTemplateProps) {
   const params = useParams()
   const countryCode = params?.countryCode as string
+
   return (
     <>
       {/* Hero Section */}
@@ -63,8 +70,10 @@ export default function ServicesListTemplate() {
       <section className="bg-[#FAFAFA] py-16 md:py-24">
         <div className="max-w-6xl mx-auto px-4 md:px-8">
           <div className="flex flex-col gap-10 md:gap-14">
-            {servicesData.map((service, index) => {
+            {services.map((service, index) => {
               const rotation = index % 2 === 0 ? "-1.5deg" : "1.5deg"
+              // Use heroImage if available, fallback to image
+              const serviceImage = service.heroImage || service.image
 
               return (
                 <Link
@@ -123,7 +132,7 @@ export default function ServicesListTemplate() {
                             Ideal For:
                           </span>
                           <div className="flex flex-wrap gap-2">
-                            {service.items.map((item, i) => (
+                            {service.items.slice(0, 6).map((item, i) => (
                               <span
                                 key={i}
                                 className="text-xs bg-gray-100 text-gray-600 px-3 py-1.5 rounded-full border border-gray-200"
@@ -158,14 +167,16 @@ export default function ServicesListTemplate() {
                       </div>
 
                       {/* Image - Right Side (16:9 aspect ratio) */}
-                      <div className="relative w-full md:w-2/5 lg:w-[45%] aspect-video md:aspect-auto order-1 md:order-2">
-                        <Image
-                          src={service.image}
-                          alt={service.title}
-                          fill
-                          className="object-cover transition-transform duration-700 group-hover:scale-105"
-                        />
-                      </div>
+                      {serviceImage && (
+                        <div className="relative w-full md:w-2/5 lg:w-[45%] aspect-video md:aspect-auto order-1 md:order-2">
+                          <Image
+                            src={serviceImage}
+                            alt={service.title}
+                            fill
+                            className="object-cover transition-transform duration-700 group-hover:scale-105"
+                          />
+                        </div>
+                      )}
                     </div>
 
                     {/* Bottom Accent Bar */}

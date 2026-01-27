@@ -102,7 +102,11 @@ const NavClient = ({
               <div className="flex-1 flex items-center gap-1">
                 {/* Mobile: Hamburger Menu + Search Icon */}
                 <div className="md:hidden flex items-center gap-1">
-                  <MobileMenu regions={regions} navLinks={navLinks} />
+                  <MobileMenu
+                    regions={regions}
+                    navLinks={navLinks}
+                    servicesData={servicesData}
+                  />
                   <button className="p-2 text-gray-900 hover:text-[#F16D34] transition-colors">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -236,7 +240,7 @@ const NavClient = ({
         onMouseLeave={handleServicesLeave}
         onClick={handleDropdownClick}
       >
-        <ServicesDropdown />
+        <ServicesDropdown servicesData={servicesData} />
       </div>
     </>
   )

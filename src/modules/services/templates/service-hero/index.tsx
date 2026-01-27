@@ -18,19 +18,24 @@ export default function ServiceHero({ service }: ServiceHeroProps) {
   const params = useParams()
   const countryCode = params?.countryCode as string
 
+  // Use heroImage if available, fallback to image
+  const backgroundImage = service.heroImage || service.image
+
   return (
     <section className="relative min-h-[50vh] md:min-h-[60vh] flex items-center justify-center overflow-hidden">
       {/* Background Image */}
-      <div className="absolute inset-0">
-        <Image
-          src={service.image}
-          alt={service.title}
-          fill
-          className="object-cover"
-          priority
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/80" />
-      </div>
+      {backgroundImage && (
+        <div className="absolute inset-0">
+          <Image
+            src={backgroundImage}
+            alt={service.title}
+            fill
+            className="object-cover"
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/80" />
+        </div>
+      )}
 
       {/* Content */}
       <div className="relative z-10 max-w-5xl mx-auto px-4 md:px-8 text-center">

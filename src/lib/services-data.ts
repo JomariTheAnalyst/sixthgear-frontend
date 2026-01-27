@@ -14,6 +14,8 @@ export interface ServiceCategory {
   shortTitle: string
   description: string
   image: string
+  heroImage?: string // Landscape hero background
+  detailImage?: string // Portrait detail image
   items: string[]
 }
 

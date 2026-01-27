@@ -18,6 +18,7 @@ export interface SatisfiedCustomersBlock {
   __component: "sections.satisfied-customers-section"
   id: number
   section_title: string
+  enabled?: boolean // Add enabled field
   customers: CustomerItem[]
   row2_customers: CustomerItem[]
 }
@@ -205,8 +206,17 @@ export function extractSatisfiedCustomersContent(
     return null
   }
 
+  // Check if section is enabled (if enabled field exists and is false, return null to trigger fallback)
+  if (customersBlock.enabled === false) {
+    console.log(
+      "[extractSatisfiedCustomers] Section disabled in CMS (enabled=false), using fallback"
+    )
+    return null
+  }
+
   console.log("[extractSatisfiedCustomers] Found customers block:", {
     section_title: customersBlock.section_title,
+    enabled: customersBlock.enabled,
     row1Count: customersBlock.customers?.length || 0,
     row2Count: customersBlock.row2_customers?.length || 0,
   })

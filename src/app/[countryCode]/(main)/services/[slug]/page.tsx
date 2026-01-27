@@ -1,10 +1,10 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import {
-  getServiceBySlug,
-  servicesData,
+  getService,
+  getAllServices,
   getAllServiceSlugs,
-} from "@lib/services-data"
+} from "@lib/strapi/services"
 import ServiceDetailTemplate from "@modules/services/templates/service-detail"
 
 interface ServicePageProps {
@@ -15,7 +15,7 @@ interface ServicePageProps {
 }
 
 export async function generateStaticParams() {
-  const slugs = getAllServiceSlugs()
+  const slugs = await getAllServiceSlugs()
   return slugs.map((slug) => ({ slug }))
 }
 
@@ -23,7 +23,7 @@ export async function generateMetadata({
   params,
 }: ServicePageProps): Promise<Metadata> {
   const { slug } = await params
-  const service = getServiceBySlug(slug)
+  const service = await getService(slug)
 
   if (!service) {
     return {
@@ -39,13 +39,15 @@ export async function generateMetadata({
 
 export default async function ServicePage({ params }: ServicePageProps) {
   const { slug } = await params
-  const service = getServiceBySlug(slug)
+  const service = await getService(slug)
 
   if (!service) {
     notFound()
   }
 
+  const otherServices = await getAllServices()
+
   return (
-    <ServiceDetailTemplate service={service} otherServices={servicesData} />
+    <ServiceDetailTemplate service={service} otherServices={otherServices} />
   )
 }

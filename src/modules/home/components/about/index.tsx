@@ -42,9 +42,16 @@ const AboutSection = ({
   // Use Strapi content if provided, otherwise fall back to hardcoded
   const content = {
     kicker: kicker || "About Us",
-    title: title || aboutUs?.heading || "About Our Company",
-    description: description || aboutUs?.description || "",
-    highlights: highlights || aboutUs?.features || [],
+    title: title || "We Offer Complete Diagnostics for Your Motorcycle",
+    description:
+      description ||
+      "Sixth Gear Moto Supply Café + Lounge is a rider-built motorcycle hub combining professional workshop service, premium accessories, riding gear, detailing, performance upgrades, and a relaxed café experience powered by First Gear Coffee.",
+    highlights: highlights || [
+      "Motorcycle Service and Advanced Diagnostics",
+      "Parts Accessories Luggage and Communications",
+      "Helmets Riding Gear and Apparel",
+      "Café Lounge and Rider Community",
+    ],
     ctaText: primaryCta?.text || "More About Us",
     ctaLink: primaryCta?.link || "/about",
     imageTop: imageTop || "/images/homepage/about/about_bg.png",
