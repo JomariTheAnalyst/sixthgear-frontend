@@ -9,12 +9,13 @@
  */
 
 import { draftMode } from "next/headers"
+import qs from "qs"
 
 const STRAPI_URL = process.env.STRAPI_URL || "http://localhost:1337"
 const STRAPI_TOKEN = process.env.STRAPI_TOKEN || ""
 
 interface StrapiRequestOptions extends RequestInit {
-  params?: Record<string, string | number | boolean>
+  params?: Record<string, any>
 }
 
 /**
@@ -52,13 +53,6 @@ export async function fetchStrapi<T = any>(
     // Build URL with query params
     const url = new URL(path, STRAPI_URL)
 
-    // Add existing params
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        url.searchParams.append(key, String(value))
-      })
-    }
-
     // CRITICAL: Strict separation of draft vs published content
     // Strapi v5 behavior:
     // - No status param OR status=published: Returns ONLY published content
@@ -66,16 +60,31 @@ export async function fetchStrapi<T = any>(
     //
     // We MUST explicitly set status=published for public site to ensure
     // draft content NEVER leaks into normal browsing.
+    const queryParams: Record<string, any> = {
+      ...(params || {}),
+    }
+
     if (isDraftMode) {
       // PREVIEW MODE: Request draft content
-      url.searchParams.set("status", "draft")
+      queryParams.status = "draft"
       console.log("[Strapi] 🔍 PREVIEW MODE - Fetching draft content")
       console.log("[Strapi] Draft Mode enabled at:", new Date().toISOString())
     } else {
       // PUBLIC MODE: Request published content ONLY
       // This ensures draft changes are NEVER visible on public site
-      url.searchParams.set("status", "published")
+      queryParams.status = "published"
       console.log("[Strapi] 🌐 PUBLIC MODE - Fetching published content only")
+    }
+
+    // Use qs library to properly serialize nested objects (for populate)
+    const queryString = qs.stringify(queryParams, {
+      encodeValuesOnly: true, // Don't encode keys like populate[blocks]
+      arrayFormat: "brackets", // Use brackets for arrays
+    })
+
+    // Append query string to URL
+    if (queryString) {
+      url.search = queryString
     }
 
     console.log("[Strapi] Request URL:", url.toString())

@@ -5,9 +5,47 @@
  * CEO Quote with profile
  */
 
+import React from "react"
 import Image from "next/image"
 
-export default function AboutMission() {
+interface AboutMissionProps {
+  quoteText?: string
+  highlightedPhrase?: string
+  ceoName?: string
+  ceoTitle?: string
+  ceoPhoto?: string
+}
+
+export default function AboutMission({
+  quoteText = "More than a shop, Sixth Gear is a rider's space. A place to wrench, ride, refuel, and connect. Whether you're here for service, upgrades, or simply good coffee and conversation, you're always welcome at Sixth Gear.",
+  highlightedPhrase = "rider's space",
+  ceoName = "Cap. Gregory Nick Sevilla",
+  ceoTitle = "CEO & Founder, Sixthgear Motosupply",
+  ceoPhoto = "/images/ceo/capgreg.jpg",
+}: AboutMissionProps) {
+  // Function to highlight phrase within quote text
+  const renderQuoteWithHighlight = () => {
+    if (!highlightedPhrase || !quoteText.includes(highlightedPhrase)) {
+      return quoteText
+    }
+
+    const parts = quoteText.split(highlightedPhrase)
+    return (
+      <>
+        {parts.map((part, index) => (
+          <React.Fragment key={index}>
+            {part}
+            {index < parts.length - 1 && (
+              <span className="text-[#F16D34] font-semibold">
+                {highlightedPhrase}
+              </span>
+            )}
+          </React.Fragment>
+        ))}
+      </>
+    )
+  }
+
   return (
     <section className="bg-[#FAFAFA] py-20 md:py-28 lg:py-36 relative overflow-hidden">
       {/* Decorative Background */}
@@ -37,14 +75,7 @@ export default function AboutMission() {
             className="text-xl md:text-2xl lg:text-3xl text-[#1a1a1a] leading-relaxed -mt-16 md:-mt-20 mb-12"
             style={{ fontFamily: "Inter Display, sans-serif" }}
           >
-            More than a shop, Sixth Gear is a{" "}
-            <span className="text-[#F16D34] font-semibold">rider's space</span>.
-            A place to wrench, ride, refuel, and connect. Whether you're here
-            for service, upgrades, or simply good coffee and conversation,{" "}
-            <span className="text-[#F16D34] font-semibold">
-              you're always welcome at Sixth Gear
-            </span>
-            .
+            {renderQuoteWithHighlight()}
           </blockquote>
 
           {/* CEO Profile */}
@@ -52,8 +83,8 @@ export default function AboutMission() {
             {/* CEO Image */}
             <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden border-4 border-[#F16D34]/20">
               <Image
-                src="/images/ceo/capgreg.jpg"
-                alt="Greg - CEO & Founder"
+                src={ceoPhoto}
+                alt={ceoName}
                 fill
                 className="object-cover"
               />
@@ -65,13 +96,13 @@ export default function AboutMission() {
                 className="text-lg md:text-xl font-bold text-[#1a1a1a]"
                 style={{ fontFamily: "Inter Display, sans-serif" }}
               >
-              Cap. Gregory Nick Sevilla
+                {ceoName}
               </h4>
               <p
                 className="text-sm md:text-base text-[#F16D34] font-medium"
                 style={{ fontFamily: "Inter Display, sans-serif" }}
               >
-                CEO & Founder, Sixthgear Motosupply
+                {ceoTitle}
               </p>
             </div>
           </div>

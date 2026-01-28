@@ -81,13 +81,11 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  console.log(
-    "[Preview] Redirecting to dedicated preview page: /{countryCode}/preview"
-  )
+  console.log(`[Preview] Redirecting to: ${previewPath}`)
 
-  // Redirect to the dedicated preview page with country code
-  // This ensures the preview is embeddable in Strapi's iframe
-  redirect(`/${locale || "ph"}/preview`)
+  // Redirect directly to the actual page (not the generic preview page)
+  // This shows the draft content on the actual page
+  redirect(previewPath)
 }
 
 /**
@@ -109,6 +107,11 @@ function getPreviewPath(
   // Map content types to their routes
   const contentTypeRoutes: Record<string, string> = {
     "api::home.home": `/${countryCode}`,
+    "api::about.about": `/${countryCode}/about`,
+    "api::about-us.about-us": `/${countryCode}/about`, // Actual Strapi UID
+    "api::coffee-menu-page.coffee-menu-page": `/${countryCode}/menu`, // Coffee Menu Page
+    "api::menu-category.menu-category": `/${countryCode}/menu`, // Menu Category (shows full menu)
+    "api::menu-item.menu-item": `/${countryCode}/menu`, // Menu Item (shows full menu)
     // Add more content types as needed:
     // "api::page.page": `/${countryCode}/pages/${documentId}`,
     // "api::blog-post.blog-post": `/${countryCode}/blog/${documentId}`,
