@@ -208,6 +208,7 @@ export default function OurServices({
                   fill
                   className="object-cover transition-transform duration-700 group-hover:scale-110"
                   sizes="(max-width: 640px) 75vw, (max-width: 768px) 60vw, 400px"
+                  unoptimized
                 />
 
                 {/* Gradient Overlay */}

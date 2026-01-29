@@ -111,6 +111,7 @@ const ProjectsSection = ({
                     fill
                     className="object-cover"
                     sizes="(max-width: 640px) 80vw, (max-width: 1024px) 60vw, 45vw"
+                    unoptimized
                   />
                   {/* Gradient Overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-[#1a1a1a] via-transparent to-transparent opacity-60" />
@@ -266,7 +267,9 @@ const ProjectsSection = ({
                 <div
                   className="flex gap-8 transition-transform duration-700 ease-in-out"
                   style={{
-                    transform: `translateX(-${currentIndex * (100 / itemsPerPage)}%)`,
+                    transform: `translateX(-${
+                      currentIndex * (100 / itemsPerPage)
+                    }%)`,
                   }}
                 >
                   {displayItems.map((item) => (
@@ -336,6 +339,7 @@ const ProjectsSection = ({
                       fill
                       className="object-cover group-hover:scale-110 transition-transform duration-700"
                       sizes="33vw"
+                      unoptimized
                     />
                     {/* Gradient Overlay */}
                     <div className="absolute inset-0 bg-gradient-to-t from-[#1a1a1a] via-transparent to-transparent opacity-60" />

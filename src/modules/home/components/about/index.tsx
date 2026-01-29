@@ -80,6 +80,7 @@ const AboutSection = ({
                 className="object-cover hover:scale-105 transition-transform duration-700"
                 sizes="(max-width: 768px) 50vw, 33vw"
                 priority
+                unoptimized
               />
             </div>
           </div>
@@ -93,6 +94,7 @@ const AboutSection = ({
                 fill
                 className="object-cover hover:scale-105 transition-transform duration-700"
                 sizes="(max-width: 768px) 60vw, 40vw"
+                unoptimized
               />
             </div>
 

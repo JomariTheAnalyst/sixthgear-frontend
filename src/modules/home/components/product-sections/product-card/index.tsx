@@ -154,6 +154,7 @@ export default function ProductCard({ product, region }: ProductCardProps) {
               fill
               className="object-contain p-6 md:p-8 transition-transform duration-500 group-hover:scale-105"
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              unoptimized
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">

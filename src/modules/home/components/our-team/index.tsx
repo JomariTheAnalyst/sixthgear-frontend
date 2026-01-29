@@ -151,6 +151,7 @@ export default function OurTeam({
                         fill
                         className="object-cover"
                         sizes="(max-width: 640px) 80vw, (max-width: 1024px) 60vw, 45vw"
+                        unoptimized
                       />
                       {/* Gradient Overlay */}
                       <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-transparent to-transparent opacity-80" />
@@ -274,6 +275,7 @@ export default function OurTeam({
                       fill
                       className="object-cover transition-transform duration-700 group-hover:scale-110"
                       sizes="33vw"
+                      unoptimized
                     />
                     {/* Gradient Overlay */}
                     <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-transparent to-transparent opacity-80" />
