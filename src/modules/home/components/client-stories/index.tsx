@@ -81,12 +81,10 @@ export default function ClientStories({
               >
                 {/* Image */}
                 <div className="relative h-44 sm:h-52 overflow-hidden">
-                  <Image
+                  <img
                     src={story.image}
                     alt={story.title}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 640px) 80vw, (max-width: 1024px) 60vw, 45vw"
+                    className="absolute inset-0 w-full h-full object-cover"
                   />
                   {/* Category Badge */}
                   <div className="absolute top-3 left-3">
@@ -167,12 +165,10 @@ export default function ClientStories({
             >
               {/* Image */}
               <div className="relative h-56 overflow-hidden">
-                <Image
+                <img
                   src={story.image}
                   alt={story.title}
-                  fill
-                  className="object-cover transition-transform duration-700 group-hover:scale-105"
-                  sizes="33vw"
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />
                 {/* Category Badge */}
                 <div className="absolute top-4 left-4">

@@ -145,13 +145,10 @@ export default function OurTeam({
                   >
                     {/* Image Container */}
                     <div className="relative h-64 sm:h-72 overflow-hidden">
-                      <Image
+                      <img
                         src={member.image}
                         alt={member.name}
-                        fill
-                        className="object-cover"
-                        sizes="(max-width: 640px) 80vw, (max-width: 1024px) 60vw, 45vw"
-                        unoptimized
+                        className="absolute inset-0 w-full h-full object-cover"
                       />
                       {/* Gradient Overlay */}
                       <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-transparent to-transparent opacity-80" />

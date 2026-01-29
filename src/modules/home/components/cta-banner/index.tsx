@@ -69,12 +69,10 @@ export default function CTABanner({
     <section className="px-3 md:px-6 lg:px-8 py-8 md:py-12">
       <div className="relative w-full h-[500px] md:h-[550px] lg:h-[600px] rounded-3xl overflow-hidden shadow-2xl">
         {/* Background Image */}
-        <Image
+        <img
           src={backgroundImage}
           alt="Sixthgear Store"
-          fill
-          className="object-cover"
-          sizes="100vw"
+          className="absolute inset-0 w-full h-full object-cover"
         />
 
         {/* Gradient Overlays */}
