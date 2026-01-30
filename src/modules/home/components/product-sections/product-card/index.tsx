@@ -22,6 +22,7 @@ import {
   COLOR_NAME_TO_HEX,
 } from "@lib/util/variant-helpers"
 import { addToCart } from "@lib/data/cart"
+import WishlistButton from "@modules/wishlist/components/wishlist-button"
 
 export type BadgeMode = "discount" | "rank" | "new" | "hot" | "none"
 
@@ -105,7 +106,7 @@ export default function ProductCard({ product, region }: ProductCardProps) {
         return hex
       }
     }
-    return "#E5E7EB" // Default gray
+    return "#FFFFFF"
   }
 
   // Check if color is light (for border visibility)
@@ -125,8 +126,8 @@ export default function ProductCard({ product, region }: ProductCardProps) {
     >
       {/* Card with border outline on all sides */}
       <div className="flex flex-col h-full border border-gray-200 hover:border-gray-300 transition-colors">
-        {/* Product Image - Gray background */}
-        <div className="relative aspect-[4/5] bg-[#f5f5f5] overflow-hidden">
+        {/* Product Image - White background */}
+        <div className="relative aspect-[4/5] bg-white overflow-hidden">
           {/* SALE Badge */}
           {pricing.isOnSale && (
             <div className="absolute top-3 left-3 z-10 flex flex-col gap-1">
@@ -146,6 +147,15 @@ export default function ProductCard({ product, region }: ProductCardProps) {
               )}
             </div>
           )}
+
+          {/* Wishlist Button */}
+          <div className="absolute top-3 right-3 z-10">
+            <WishlistButton
+              variantId={firstVariant?.id || ""}
+              productId={product.id}
+              size="sm"
+            />
+          </div>
 
           {imageUrl ? (
             <Image
@@ -190,8 +200,8 @@ export default function ProductCard({ product, region }: ProductCardProps) {
         {/* Line separator between image and text */}
         <div className="h-px bg-gray-200" />
 
-        {/* Product Info */}
-        <div className="flex flex-col p-3 gap-2">
+        {/* Product Info - Gray background fills remaining space */}
+        <div className="flex flex-col flex-1 p-3 gap-2 bg-gray-50">
           {/* Product Title */}
           <h3
             className="text-sm font-semibold text-gray-900 leading-snug line-clamp-2 group-hover:text-[#F16D34] transition-colors"

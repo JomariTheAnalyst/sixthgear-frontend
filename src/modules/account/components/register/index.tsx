@@ -162,14 +162,14 @@ const Register = ({ setCurrentView }: Props) => {
         <p className="text-xs text-gray-500">
           By creating an account, you agree to Sixthgear&apos;s{" "}
           <LocalizedClientLink
-            href="/content/privacy-policy"
+            href="/privacy"
             className="text-blue-600 hover:text-blue-700"
           >
             Privacy Policy
           </LocalizedClientLink>{" "}
           and{" "}
           <LocalizedClientLink
-            href="/content/terms-of-use"
+            href="/terms"
             className="text-blue-600 hover:text-blue-700"
           >
             Terms of Use

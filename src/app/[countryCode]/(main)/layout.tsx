@@ -13,6 +13,7 @@ import FreeShippingPriceNudge from "@modules/shipping/components/free-shipping-p
 import CartDrawerWrapper from "@modules/cart/components/cart-drawer-wrapper"
 import { MarketingProvider } from "@modules/marketing"
 import PreviewBanner from "@modules/marketing/components/preview-banner"
+import { SelectedItemsProvider } from "@lib/context/selected-cart-items-context"
 
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseURL()),
@@ -34,26 +35,28 @@ export default async function PageLayout(props: { children: React.ReactNode }) {
   const marketing = await getMarketingForPath("/")
 
   return (
-    <CartDrawerWrapper cart={cart}>
-      <MarketingProvider marketing={marketing}>
-        <Nav />
-        {customer && cart && (
-          <CartMismatchBanner customer={customer} cart={cart} />
-        )}
+    <SelectedItemsProvider>
+      <CartDrawerWrapper cart={cart}>
+        <MarketingProvider marketing={marketing}>
+          <Nav />
+          {customer && cart && (
+            <CartMismatchBanner customer={customer} cart={cart} />
+          )}
 
-        {cart && (
-          <FreeShippingPriceNudge
-            variant="popup"
-            cart={cart}
-            shippingOptions={shippingOptions}
-          />
-        )}
-        {props.children}
-        <Footer />
+          {cart && (
+            <FreeShippingPriceNudge
+              variant="popup"
+              cart={cart}
+              shippingOptions={shippingOptions}
+            />
+          )}
+          {props.children}
+          <Footer />
 
-        {/* Preview Mode Banner */}
-        <PreviewBanner isPreview={draft.isEnabled} />
-      </MarketingProvider>
-    </CartDrawerWrapper>
+          {/* Preview Mode Banner */}
+          <PreviewBanner isPreview={draft.isEnabled} />
+        </MarketingProvider>
+      </CartDrawerWrapper>
+    </SelectedItemsProvider>
   )
 }

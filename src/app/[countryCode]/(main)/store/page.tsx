@@ -2,6 +2,7 @@ import { Metadata } from "next"
 
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 import StoreTemplate from "@modules/store/templates"
+import { getWishlist } from "@lib/data/wishlist"
 
 export const metadata: Metadata = {
   title: "Store",

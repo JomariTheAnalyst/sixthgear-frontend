@@ -1,17 +1,17 @@
 import { listRegions } from "@lib/data/regions"
 import { retrieveCart } from "@lib/data/cart"
 import { retrieveCustomer } from "@lib/data/customer"
+import { getWishlistCount } from "@lib/data/wishlist"
 import { StoreRegion, HttpTypes } from "@medusajs/types"
 import NavClient from "./nav-client"
 import { getAllServices } from "@lib/strapi/services"
 
 export default async function Nav() {
-  const [regions, cart, customer, services] = await Promise.all([
-    listRegions().then((regions: StoreRegion[]) => regions),
-    retrieveCart().catch(() => null),
-    retrieveCustomer().catch(() => null),
-    getAllServices(), // Fetch from Strapi with fallback
-  ])
+  const regions = await listRegions().catch(() => [] as StoreRegion[])
+  const cart = await retrieveCart().catch(() => null)
+  const customer = await retrieveCustomer().catch(() => null)
+  const services = await getAllServices().catch(() => [])
+  const wishlistCount = await getWishlistCount().catch(() => 0)
 
   return (
     <NavClient
@@ -19,6 +19,7 @@ export default async function Nav() {
       cart={cart}
       servicesData={services}
       customer={customer}
+      wishlistCount={wishlistCount}
     />
   )
 }

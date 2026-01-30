@@ -35,7 +35,8 @@ const Payment = ({
   const router = useRouter()
   const pathname = usePathname()
 
-  const isOpen = searchParams.get("step") === "payment"
+  // Always open by default - no need to click edit
+  const isOpen = true
 
   const setPaymentMethod = async (method: string) => {
     setError(null)
@@ -79,9 +80,7 @@ const Payment = ({
     (cart.shipping_methods?.length ?? 0) < 1
 
   const canPlaceOrder =
-    agreedToTerms &&
-    !notReady &&
-    (paidByGiftcard || selectedPaymentMethod)
+    agreedToTerms && !notReady && (paidByGiftcard || selectedPaymentMethod)
 
   // Handle place order for manual/COD payments
   const handlePlaceOrder = async () => {
@@ -149,48 +148,41 @@ const Payment = ({
       <div className="flex flex-row items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <div
-            className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-              !isOpen && paymentReady
+            className={`w-10 h-10 rounded-full flex items-center justify-center text-base font-bold shadow-sm ${
+              paymentReady
                 ? "bg-green-500 text-white"
-                : !isOpen && !paymentReady
-                ? "bg-gray-300 text-gray-500"
-                : "bg-gray-900 text-white"
+                : previousStepsCompleted
+                ? "bg-[#F16D34] text-white"
+                : "bg-gray-300 text-gray-500"
             }`}
           >
-            {!isOpen && paymentReady ? (
-              <CheckCircleSolid className="w-5 h-5" />
-            ) : (
-              "3"
-            )}
+            {paymentReady ? <CheckCircleSolid className="w-6 h-6" /> : "3"}
           </div>
-          <Heading
-            level="h2"
-            className={clx("text-lg font-semibold", {
-              "text-gray-400": !isOpen && !paymentReady && !previousStepsCompleted,
-              "text-gray-900": isOpen || paymentReady || previousStepsCompleted,
-            })}
-          >
-            Payment & Order
-          </Heading>
+          <div>
+            <Heading
+              level="h2"
+              className={clx("text-xl font-bold", {
+                "text-gray-400": !previousStepsCompleted,
+                "text-gray-900": previousStepsCompleted,
+              })}
+            >
+              Payment & Review
+            </Heading>
+            <p className="text-sm text-gray-500 mt-0.5">
+              Complete your order securely
+            </p>
+          </div>
         </div>
-        {!isOpen && paymentReady && (
-          <button
-            onClick={handleEdit}
-            className="text-sm font-medium text-[#F16D34] hover:text-[#d55a24] transition-colors"
-            data-testid="edit-payment-button"
-          >
-            Edit
-          </button>
-        )}
       </div>
 
-      {/* Show content if step is payment OR if previous steps are completed */}
-      {(isOpen || previousStepsCompleted) && (
+      {previousStepsCompleted ? (
         <div>
           {/* Payment Methods */}
           {!paidByGiftcard && availablePaymentMethods?.length > 0 && (
             <div className="space-y-3 mb-6">
-              <p className="text-sm font-medium text-gray-700 mb-3">Select Payment Method</p>
+              <p className="text-sm font-medium text-gray-700 mb-3">
+                Select Payment Method
+              </p>
               <RadioGroup
                 value={selectedPaymentMethod}
                 onChange={(value: string) => setPaymentMethod(value)}
@@ -327,52 +319,14 @@ const Payment = ({
           {/* Helper text */}
           {!agreedToTerms && (
             <p className="mt-3 text-xs text-gray-500 text-center">
-              Please agree to the Terms of Service and Privacy Policy to place your order.
+              Please agree to the Terms of Service and Privacy Policy to place
+              your order.
             </p>
           )}
         </div>
-      )}
-
-      {/* Summary view when not open and payment not ready */}
-      {!isOpen && !previousStepsCompleted && (
+      ) : (
         <div className="text-sm text-gray-500">
           Complete the previous steps to proceed with payment.
-        </div>
-      )}
-
-      {/* Summary when payment is ready but section is collapsed */}
-      {!isOpen && paymentReady && activeSession && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <Text className="text-sm font-medium text-gray-900 mb-2">
-              Payment Method
-            </Text>
-            <Text
-              className="text-sm text-gray-600"
-              data-testid="payment-method-summary"
-            >
-              {paymentInfoMap[activeSession?.provider_id]?.title ||
-                activeSession?.provider_id}
-            </Text>
-          </div>
-          <div>
-            <Text className="text-sm font-medium text-gray-900 mb-2">
-              Payment Details
-            </Text>
-            <div
-              className="flex gap-2 items-center"
-              data-testid="payment-details-summary"
-            >
-              <Container className="flex items-center h-7 w-fit p-2 bg-gray-100 rounded">
-                {paymentInfoMap[selectedPaymentMethod]?.icon || (
-                  <CreditCard />
-                )}
-              </Container>
-              <Text className="text-sm text-gray-600">
-                Cash on Delivery
-              </Text>
-            </div>
-          </div>
         </div>
       )}
     </div>

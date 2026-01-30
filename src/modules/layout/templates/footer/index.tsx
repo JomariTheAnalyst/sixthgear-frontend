@@ -20,7 +20,7 @@ const supportLinks = [
   { name: "Contact Us", href: "/contact" },
   { name: "FAQs", href: "/faqs" },
   { name: "Shipping Info", href: "/shipping" },
-  { name: "Returns", href: "/returns" },
+  { name: "Returns & Warranty", href: "/returns-warranty" },
 ]
 
 const socialLinks = [
@@ -72,11 +72,9 @@ const socialLinks = [
 ]
 
 const legalLinks = [
-  { name: "Legal Notices & T&Cs", href: "/terms" },
+  { name: "Terms & Conditions", href: "/terms" },
   { name: "Privacy Policy", href: "/privacy" },
-  { name: "Internal Regulations", href: "/regulations" },
-  { name: "Vigipirate", href: "/vigipirate" },
-  { name: "Consumer Mediation", href: "/mediation" },
+  { name: "Returns & Warranty", href: "/returns-warranty" },
 ]
 
 export default function Footer() {

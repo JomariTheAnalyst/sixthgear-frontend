@@ -121,7 +121,9 @@ const REVALIDATE_SLUGS = 300 // 5 minutes for slug list
  * @param image - Strapi image object
  * @returns Absolute image URL or undefined if no image
  */
-function getBestImageUrl(image: StrapiImage | null | undefined): string | undefined {
+function getBestImageUrl(
+  image: StrapiImage | null | undefined
+): string | undefined {
   if (!image) return undefined
 
   // Prefer medium format, then large, then small, then original
@@ -191,6 +193,8 @@ async function fetchServicesFromStrapi(): Promise<ServiceCategory[] | null> {
         ...(STRAPI_TOKEN && { Authorization: `Bearer ${STRAPI_TOKEN}` }),
       },
       next: { revalidate: REVALIDATE_SERVICE_DATA },
+      // Add timeout and error handling
+      signal: AbortSignal.timeout(10000), // 10 second timeout
     })
 
     if (!response.ok) {
@@ -207,11 +211,14 @@ async function fetchServicesFromStrapi(): Promise<ServiceCategory[] | null> {
       return null
     }
 
-    console.log(`[Strapi Services] ✅ Fetched ${result.data.length} services from Strapi`)
+    console.log(
+      `[Strapi Services] ✅ Fetched ${result.data.length} services from Strapi`
+    )
 
     return result.data.map(mapStrapiToService)
   } catch (error) {
     console.error("[Strapi Services] Error fetching services:", error)
+    // Always return null, never throw
     return null
   }
 }
@@ -230,7 +237,10 @@ async function fetchServiceBySlugFromStrapi(
     url.searchParams.set("filters[slug][$eq]", slug)
     url.searchParams.set("populate", "*")
 
-    console.log(`[Strapi Services] Fetching service by slug "${slug}" from:`, url.toString())
+    console.log(
+      `[Strapi Services] Fetching service by slug "${slug}" from:`,
+      url.toString()
+    )
 
     const response = await fetch(url.toString(), {
       headers: {
@@ -249,16 +259,25 @@ async function fetchServiceBySlugFromStrapi(
 
     const result: StrapiResponse<StrapiServiceRaw[]> = await response.json()
 
-    if (!result.data || !Array.isArray(result.data) || result.data.length === 0) {
+    if (
+      !result.data ||
+      !Array.isArray(result.data) ||
+      result.data.length === 0
+    ) {
       console.log(`[Strapi Services] No service found with slug "${slug}"`)
       return null
     }
 
-    console.log(`[Strapi Services] ✅ Found service "${result.data[0].title}" from Strapi`)
+    console.log(
+      `[Strapi Services] ✅ Found service "${result.data[0].title}" from Strapi`
+    )
 
     return mapStrapiToService(result.data[0])
   } catch (error) {
-    console.error(`[Strapi Services] Error fetching service by slug "${slug}":`, error)
+    console.error(
+      `[Strapi Services] Error fetching service by slug "${slug}":`,
+      error
+    )
     return null
   }
 }
@@ -275,7 +294,10 @@ async function getAllServiceSlugsFromStrapi(): Promise<string[] | null> {
     url.searchParams.set("fields[0]", "slug")
     url.searchParams.set("pagination[pageSize]", "1000")
 
-    console.log("[Strapi Services] Fetching all service slugs from:", url.toString())
+    console.log(
+      "[Strapi Services] Fetching all service slugs from:",
+      url.toString()
+    )
 
     const response = await fetch(url.toString(), {
       headers: {
@@ -302,7 +324,9 @@ async function getAllServiceSlugsFromStrapi(): Promise<string[] | null> {
 
     const slugs = result.data.map((item) => item.slug).filter(Boolean)
 
-    console.log(`[Strapi Services] ✅ Fetched ${slugs.length} slugs from Strapi`)
+    console.log(
+      `[Strapi Services] ✅ Fetched ${slugs.length} slugs from Strapi`
+    )
 
     return slugs
   } catch (error) {
@@ -346,7 +370,9 @@ export async function getService(
     return strapiService
   }
 
-  console.log(`[Strapi Services] ⚠️ Using fallback local data for slug "${slug}"`)
+  console.log(
+    `[Strapi Services] ⚠️ Using fallback local data for slug "${slug}"`
+  )
   return getServiceBySlug(slug)
 }
 
