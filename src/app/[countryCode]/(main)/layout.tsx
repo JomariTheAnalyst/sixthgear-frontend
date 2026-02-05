@@ -14,6 +14,7 @@ import CartDrawerWrapper from "@modules/cart/components/cart-drawer-wrapper"
 import { MarketingProvider } from "@modules/marketing"
 import PreviewBanner from "@modules/marketing/components/preview-banner"
 import { SelectedItemsProvider } from "@lib/context/selected-cart-items-context"
+import { CartLimitModalProvider } from "@lib/context/cart-limit-modal-context"
 
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseURL()),
@@ -35,28 +36,30 @@ export default async function PageLayout(props: { children: React.ReactNode }) {
   const marketing = await getMarketingForPath("/")
 
   return (
-    <SelectedItemsProvider>
-      <CartDrawerWrapper cart={cart}>
-        <MarketingProvider marketing={marketing}>
-          <Nav />
-          {customer && cart && (
-            <CartMismatchBanner customer={customer} cart={cart} />
-          )}
+    <CartLimitModalProvider>
+      <SelectedItemsProvider>
+        <CartDrawerWrapper cart={cart}>
+          <MarketingProvider marketing={marketing}>
+            <Nav />
+            {customer && cart && (
+              <CartMismatchBanner customer={customer} cart={cart} />
+            )}
 
-          {cart && (
-            <FreeShippingPriceNudge
-              variant="popup"
-              cart={cart}
-              shippingOptions={shippingOptions}
-            />
-          )}
-          {props.children}
-          <Footer />
+            {cart && (
+              <FreeShippingPriceNudge
+                variant="popup"
+                cart={cart}
+                shippingOptions={shippingOptions}
+              />
+            )}
+            {props.children}
+            <Footer />
 
-          {/* Preview Mode Banner */}
-          <PreviewBanner isPreview={draft.isEnabled} />
-        </MarketingProvider>
-      </CartDrawerWrapper>
-    </SelectedItemsProvider>
+            {/* Preview Mode Banner */}
+            <PreviewBanner isPreview={draft.isEnabled} />
+          </MarketingProvider>
+        </CartDrawerWrapper>
+      </SelectedItemsProvider>
+    </CartLimitModalProvider>
   )
 }

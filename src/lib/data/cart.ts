@@ -17,14 +17,36 @@ import { getRegion } from "./regions"
 import { getLocale } from "@lib/data/locale-actions"
 
 /**
+ * Checks if a cart has a succeeded payment session that blocks operations
+ * @param cart - The cart to check
+ * @returns true if cart is stuck with succeeded payment
+ */
+function isCartStuckWithSucceededPayment(cart: any): boolean {
+  if (!cart?.payment_collection?.payment_sessions) {
+    return false
+  }
+
+  // Check if any payment session has succeeded status
+  const hasSucceededPayment = cart.payment_collection.payment_sessions.some(
+    (session: any) =>
+      session.status === "authorized" ||
+      session.data?.status === "succeeded" ||
+      session.data?.status === "processing"
+  )
+
+  return hasSucceededPayment
+}
+
+/**
  * Retrieves a cart by its ID. If no ID is provided, it will use the cart ID from the cookies.
+ * If the cart is stuck with a succeeded payment or completed, it creates a new cart automatically.
  * @param cartId - optional - The ID of the cart to retrieve.
  * @returns The cart object if found, or null if not found.
  */
 export async function retrieveCart(cartId?: string, fields?: string) {
   const id = cartId || (await getCartId())
   fields ??=
-    "*items, *region, *items.product, *items.variant, *items.thumbnail, *items.metadata, +items.total, *promotions, +shipping_methods.name"
+    "*items, *region, *items.product, *items.variant, *items.thumbnail, *items.metadata, +items.total, *promotions, +shipping_methods.name, *payment_collection, *payment_collection.payment_sessions, +completed_at"
 
   if (!id) {
     return null
@@ -38,18 +60,72 @@ export async function retrieveCart(cartId?: string, fields?: string) {
     ...(await getCacheOptions("carts")),
   }
 
-  return await sdk.client
-    .fetch<HttpTypes.StoreCartResponse>(`/store/carts/${id}`, {
-      method: "GET",
-      query: {
-        fields,
-      },
-      headers,
-      next,
-      cache: "force-cache",
-    })
-    .then(({ cart }: { cart: HttpTypes.StoreCart }) => cart)
-    .catch(() => null)
+  try {
+    const cart = await sdk.client
+      .fetch<HttpTypes.StoreCartResponse>(`/store/carts/${id}`, {
+        method: "GET",
+        query: {
+          fields,
+        },
+        headers,
+        next,
+        cache: "force-cache",
+      })
+      .then(({ cart }: { cart: HttpTypes.StoreCart }) => cart)
+
+    // Check if cart is completed (order was placed)
+    if (cart && cart.completed_at) {
+      console.log(
+        "[Cart] Detected completed cart (order placed). Creating new cart..."
+      )
+
+      // Remove the completed cart ID
+      await removeCartId()
+
+      // Revalidate cart cache
+      const cartCacheTag = await getCacheTag("carts")
+      revalidateTag(cartCacheTag)
+
+      // Return null to trigger new cart creation
+      return null
+    }
+
+    // Check if cart is stuck with succeeded payment
+    if (cart && isCartStuckWithSucceededPayment(cart)) {
+      console.log(
+        "[Cart] Detected stuck cart with succeeded payment. Creating new cart..."
+      )
+
+      // Remove the stuck cart ID
+      await removeCartId()
+
+      // Revalidate cart cache
+      const cartCacheTag = await getCacheTag("carts")
+      revalidateTag(cartCacheTag)
+
+      // Return null to trigger new cart creation
+      return null
+    }
+
+    return cart
+  } catch (error: any) {
+    console.error("[Cart] Error retrieving cart:", error)
+
+    // If cart not found or any error, remove the cart ID cookie
+    if (
+      error.message?.includes("not found") ||
+      error.message?.includes("404")
+    ) {
+      console.log("[Cart] Cart not found, removing cart ID cookie...")
+      await removeCartId()
+
+      // Revalidate cart cache
+      const cartCacheTag = await getCacheTag("carts")
+      revalidateTag(cartCacheTag)
+    }
+
+    return null
+  }
 }
 
 export async function getOrSetCart(countryCode: string) {
@@ -87,6 +163,27 @@ export async function getOrSetCart(countryCode: string) {
   }
 
   return cart
+}
+
+/**
+ * Forces creation of a new cart by removing the old cart ID
+ * Useful when the current cart is stuck (e.g., after failed payment cleanup)
+ */
+export async function forceNewCart(countryCode: string) {
+  try {
+    // Remove the old cart ID
+    await removeCartId()
+
+    // Create a new cart
+    const newCart = await getOrSetCart(countryCode)
+
+    console.log("[Cart] Forced new cart creation:", newCart.id)
+
+    return newCart
+  } catch (error: any) {
+    console.error("[Cart] Failed to force new cart:", error)
+    throw error
+  }
 }
 
 export async function updateCart(data: HttpTypes.StoreUpdateCart) {
@@ -133,28 +230,77 @@ export async function addToCart({
     throw new Error("Error retrieving or creating cart")
   }
 
+  // Check cart limit (49 items)
+  const CART_LIMIT = 49
+  const currentItemCount =
+    cart.items?.reduce((sum, item) => sum + item.quantity, 0) || 0
+
+  if (currentItemCount + quantity > CART_LIMIT) {
+    throw new Error(`CART_LIMIT_EXCEEDED:${currentItemCount}:${CART_LIMIT}`)
+  }
+
   const headers = {
     ...(await getAuthHeaders()),
   }
 
-  await sdk.store.cart
-    .createLineItem(
-      cart.id,
-      {
-        variant_id: variantId,
-        quantity,
-      },
-      {},
-      headers
-    )
-    .then(async () => {
-      const cartCacheTag = await getCacheTag("carts")
-      revalidateTag(cartCacheTag)
+  try {
+    await sdk.store.cart
+      .createLineItem(
+        cart.id,
+        {
+          variant_id: variantId,
+          quantity,
+        },
+        {},
+        headers
+      )
+      .then(async () => {
+        const cartCacheTag = await getCacheTag("carts")
+        revalidateTag(cartCacheTag)
 
-      const fulfillmentCacheTag = await getCacheTag("fulfillment")
-      revalidateTag(fulfillmentCacheTag)
-    })
-    .catch(medusaError)
+        const fulfillmentCacheTag = await getCacheTag("fulfillment")
+        revalidateTag(fulfillmentCacheTag)
+      })
+  } catch (error: any) {
+    // If cart is completed, create a new cart and retry
+    if (error.message?.includes("already completed")) {
+      console.log("[Cart] Cart is completed, creating new cart and retrying...")
+
+      // Remove the completed cart ID
+      await removeCartId()
+
+      // Create a new cart
+      const newCart = await getOrSetCart(countryCode)
+
+      if (!newCart) {
+        throw new Error("Failed to create new cart")
+      }
+
+      // Retry adding to the new cart
+      await sdk.store.cart
+        .createLineItem(
+          newCart.id,
+          {
+            variant_id: variantId,
+            quantity,
+          },
+          {},
+          headers
+        )
+        .then(async () => {
+          const cartCacheTag = await getCacheTag("carts")
+          revalidateTag(cartCacheTag)
+
+          const fulfillmentCacheTag = await getCacheTag("fulfillment")
+          revalidateTag(fulfillmentCacheTag)
+        })
+
+      return
+    }
+
+    // For other errors, use standard error handler
+    throw medusaError(error)
+  }
 }
 
 export async function updateLineItem({
@@ -292,6 +438,57 @@ export async function initiatePaymentSession(
 ) {
   const headers = {
     ...(await getAuthHeaders()),
+  }
+
+  // Check if cart has payment collection
+  if (!cart.payment_collection) {
+    console.log("[Cart] No payment collection found, creating one...")
+
+    try {
+      // Create payment collection first
+      const paymentCollectionResponse = await sdk.client.fetch(
+        `/store/payment-collections`,
+        {
+          method: "POST",
+          headers: {
+            ...headers,
+            "Content-Type": "application/json",
+          },
+          body: {
+            cart_id: cart.id,
+          },
+        }
+      )
+
+      console.log(
+        "[Cart] ✅ Payment collection created:",
+        paymentCollectionResponse
+      )
+
+      // Revalidate cart cache to get updated cart with payment collection
+      const cartCacheTag = await getCacheTag("carts")
+      revalidateTag(cartCacheTag)
+
+      // Longer delay to ensure backend has fully processed
+      console.log("[Cart] Waiting for backend to process payment collection...")
+      await new Promise((resolve) => setTimeout(resolve, 1500))
+
+      // Fetch updated cart
+      const updatedCart = await retrieveCart(cart.id)
+      if (updatedCart?.payment_collection) {
+        cart = updatedCart
+        console.log("[Cart] ✅ Cart updated with payment collection")
+      } else {
+        console.warn(
+          "[Cart] ⚠️ Payment collection not found in updated cart, but continuing..."
+        )
+      }
+    } catch (error: any) {
+      console.error("[Cart] ❌ Failed to create payment collection:", error)
+      throw new Error(
+        "Failed to create payment collection. Please ensure shipping method is selected."
+      )
+    }
   }
 
   return sdk.store.payment
@@ -451,27 +648,53 @@ export async function placeOrder(cartId?: string) {
     ...(await getAuthHeaders()),
   }
 
-  const cartRes = await sdk.store.cart
-    .complete(id, {}, headers)
-    .then(async (cartRes) => {
-      const cartCacheTag = await getCacheTag("carts")
-      revalidateTag(cartCacheTag)
-      return cartRes
-    })
-    .catch(medusaError)
+  try {
+    const cartRes = await sdk.store.cart
+      .complete(id, {}, headers)
+      .then(async (cartRes) => {
+        const cartCacheTag = await getCacheTag("carts")
+        revalidateTag(cartCacheTag)
+        return cartRes
+      })
 
-  if (cartRes?.type === "order") {
-    const countryCode =
-      cartRes.order.shipping_address?.country_code?.toLowerCase()
+    if (cartRes?.type === "order") {
+      const countryCode =
+        cartRes.order.shipping_address?.country_code?.toLowerCase()
 
-    const orderCacheTag = await getCacheTag("orders")
-    revalidateTag(orderCacheTag)
+      const orderCacheTag = await getCacheTag("orders")
+      revalidateTag(orderCacheTag)
 
-    removeCartId()
-    redirect(`/${countryCode}/order/${cartRes?.order.id}/confirmed`)
+      removeCartId()
+      redirect(`/${countryCode}/order/${cartRes?.order.id}/confirmed`)
+    }
+
+    return cartRes.cart
+  } catch (error: any) {
+    console.error("[Cart] Order placement failed:", error)
+
+    // If error is related to payment session cleanup (common with Stripe succeeded payments)
+    // Log the error but don't throw - let the calling code handle it
+    if (
+      error.message?.toLowerCase().includes("payment") ||
+      error.message?.toLowerCase().includes("session") ||
+      error.message?.toLowerCase().includes("cancel") ||
+      error.message?.toLowerCase().includes("succeeded")
+    ) {
+      console.error(
+        "[Cart] Payment session cleanup failed - this is expected for succeeded Stripe payments"
+      )
+      console.error("[Cart] Cart ID:", id)
+      console.error("[Cart] Error details:", error.message)
+
+      // Throw a more specific error that the frontend can handle
+      throw new Error(
+        `ORDER_CREATION_FAILED:${id}:Payment succeeded but order creation failed due to payment session cleanup`
+      )
+    }
+
+    // For other errors, use the standard error handler
+    throw medusaError(error)
   }
-
-  return cartRes.cart
 }
 
 /**

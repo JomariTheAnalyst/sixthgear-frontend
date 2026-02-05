@@ -3,13 +3,22 @@
 import { useEffect, useState, useCallback } from "react"
 import { HttpTypes } from "@medusajs/types"
 import { useCartDrawer } from "@lib/context/cart-drawer-context"
+import { useSelectedItems } from "@lib/context/selected-cart-items-context"
 import { convertToLocale } from "@lib/util/money"
-import { updateLineItem, changeLineItemVariant } from "@lib/data/cart"
+import {
+  updateLineItem,
+  changeLineItemVariant,
+  forceNewCart,
+} from "@lib/data/cart"
 import { getProductByHandle } from "@lib/data/products"
+import {
+  getStockStatus,
+  getStockLabel,
+  isItemOutOfStock,
+} from "@lib/util/cart-helpers"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import DeleteButton from "@modules/common/components/delete-button"
 import Thumbnail from "@modules/products/components/thumbnail"
-import DiscountCode from "@modules/checkout/components/discount-code"
 import { useRouter, useParams } from "next/navigation"
 
 type CartDrawerProps = {
@@ -25,14 +34,25 @@ type VariantSelectorState = {
 
 export default function CartDrawer({ cart }: CartDrawerProps) {
   const { isCartOpen, closeCart } = useCartDrawer()
+  const {
+    isSelected,
+    toggleItem,
+    selectAll,
+    deselectAll,
+    selectedItems,
+    hasSelectedItems,
+    selectedCount,
+  } = useSelectedItems()
   const [updatingItem, setUpdatingItem] = useState<string | null>(null)
   const [isRedirecting, setIsRedirecting] = useState(false)
   const [variantSelector, setVariantSelector] =
     useState<VariantSelectorState>(null)
-  const [productData, setProductData] =
-    useState<HttpTypes.StoreProduct | null>(null)
+  const [productData, setProductData] = useState<HttpTypes.StoreProduct | null>(
+    null
+  )
   const [loadingProduct, setLoadingProduct] = useState(false)
   const [changingVariant, setChangingVariant] = useState(false)
+  const [clearingCart, setClearingCart] = useState(false)
   const router = useRouter()
   const params = useParams()
   const countryCode = (params.countryCode as string) || "ph"
@@ -79,6 +99,32 @@ export default function CartDrawer({ cart }: CartDrawerProps) {
   const subtotal = cart?.subtotal ?? 0
   const discount = cart?.discount_total ?? 0
   const total = cart?.total ?? 0
+
+  // Calculate selected items total
+  const selectedTotal =
+    cart?.items
+      ?.filter((item) => selectedItems.has(item.id))
+      .reduce((sum, item) => sum + (item.subtotal || 0), 0) || 0
+
+  // Calculate actual selected count from cart items (not from Set size)
+  const actualSelectedCount =
+    cart?.items?.filter((item) => selectedItems.has(item.id)).length || 0
+
+  // Get in-stock items for select all
+  const inStockItems =
+    cart?.items?.filter((item) => !isItemOutOfStock(item)) || []
+  const inStockItemIds = inStockItems.map((item) => item.id)
+  const allSelected =
+    inStockItemIds.length > 0 &&
+    inStockItemIds.every((id) => selectedItems.has(id))
+
+  const handleSelectAll = () => {
+    if (allSelected) {
+      deselectAll()
+    } else {
+      selectAll(inStockItemIds)
+    }
+  }
 
   const handleQuantityChange = async (itemId: string, newQuantity: number) => {
     if (newQuantity < 1) return
@@ -129,12 +175,36 @@ export default function CartDrawer({ cart }: CartDrawerProps) {
     }
   }
 
+  const handleClearCart = async () => {
+    if (
+      !confirm(
+        "Are you sure you want to clear your cart? This will create a fresh cart and remove all items."
+      )
+    ) {
+      return
+    }
+
+    setClearingCart(true)
+    try {
+      await forceNewCart(countryCode)
+      // Cart will be refreshed automatically by the page
+      window.location.reload()
+    } catch (error) {
+      console.error("Failed to clear cart:", error)
+      alert("Failed to clear cart. Please try again.")
+    } finally {
+      setClearingCart(false)
+    }
+  }
+
   // Get option values from a variant
   const getVariantOptions = (variant: HttpTypes.StoreProductVariant) => {
-    return variant.options?.map((opt) => ({
-      name: opt.option?.title || "",
-      value: opt.value || "",
-    })) || []
+    return (
+      variant.options?.map((opt) => ({
+        name: opt.option?.title || "",
+        value: opt.value || "",
+      })) || []
+    )
   }
 
   return (
@@ -155,28 +225,91 @@ export default function CartDrawer({ cart }: CartDrawerProps) {
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-gray-200 bg-white">
-          <h2 className="text-xl font-bold text-gray-900 uppercase tracking-wide">
-            Your Cart{" "}
-            <span className="font-normal text-gray-500">[{totalItems}]</span>
-          </h2>
-          <button
-            onClick={closeCart}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-          >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          <div className="flex items-center gap-3">
+            <h2 className="text-xl font-bold text-gray-900 uppercase tracking-wide">
+              Your Cart{" "}
+              <span className="font-normal text-gray-500">[{totalItems}]</span>
+            </h2>
+          </div>
+          <div className="flex items-center gap-3">
+            {cart && cart.items && cart.items.length > 0 && (
+              <>
+                <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-600 hover:text-gray-900">
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    onChange={handleSelectAll}
+                    disabled={inStockItems.length === 0}
+                    className="w-4 h-4 rounded border-gray-300 text-[#F16D34] focus:ring-[#F16D34]"
+                  />
+                  <span>{allSelected ? "Deselect All" : "Select All"}</span>
+                </label>
+                <button
+                  onClick={handleClearCart}
+                  disabled={clearingCart}
+                  className="px-3 py-1.5 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                  title="Clear cart and start fresh"
+                >
+                  {clearingCart ? (
+                    <>
+                      <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24">
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                          fill="none"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                        />
+                      </svg>
+                      Clearing...
+                    </>
+                  ) : (
+                    <>
+                      <svg
+                        className="w-3.5 h-3.5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        />
+                      </svg>
+                      Clear Cart
+                    </>
+                  )}
+                </button>
+              </>
+            )}
+            <button
+              onClick={closeCart}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* Content */}
@@ -194,12 +327,28 @@ export default function CartDrawer({ cart }: CartDrawerProps) {
                       item.compare_at_unit_price &&
                       item.compare_at_unit_price > (item.unit_price ?? 0)
                     const isUpdating = updatingItem === item.id
+                    const stockStatus = getStockStatus(item)
+                    const outOfStock = isItemOutOfStock(item)
+                    const inventoryQty = item.variant?.inventory_quantity || 0
 
                     return (
                       <div
                         key={item.id}
-                        className="flex gap-4 p-6 border-b border-gray-100 relative group"
+                        className={`flex gap-4 p-6 border-b border-gray-100 relative group ${
+                          outOfStock ? "opacity-60" : ""
+                        }`}
                       >
+                        {/* Checkbox */}
+                        <div className="flex items-start pt-2">
+                          <input
+                            type="checkbox"
+                            checked={isSelected(item.id)}
+                            onChange={() => toggleItem(item.id, outOfStock)}
+                            disabled={outOfStock}
+                            className="w-4 h-4 rounded border-gray-300 text-[#F16D34] focus:ring-[#F16D34] cursor-pointer disabled:cursor-not-allowed"
+                          />
+                        </div>
+
                         {/* Image */}
                         <LocalizedClientLink
                           href={`/products/${item.product_handle}`}
@@ -256,6 +405,18 @@ export default function CartDrawer({ cart }: CartDrawerProps) {
                                 />
                               </svg>
                             </button>
+                          )}
+
+                          {/* Stock Status Badges */}
+                          {stockStatus === "out_of_stock" && (
+                            <span className="inline-flex items-center px-2 py-0.5 bg-red-500 text-white text-[10px] font-bold uppercase tracking-wider w-fit mt-2">
+                              {getStockLabel(stockStatus)}
+                            </span>
+                          )}
+                          {stockStatus === "low_stock" && (
+                            <span className="inline-flex items-center px-2 py-0.5 bg-orange-500 text-white text-[10px] font-bold uppercase tracking-wider w-fit mt-2">
+                              {getStockLabel(stockStatus, inventoryQty)}
+                            </span>
                           )}
 
                           {/* Sale Badge & Price */}
@@ -370,14 +531,6 @@ export default function CartDrawer({ cart }: CartDrawerProps) {
                   {totalItems} added to cart in the last few days
                 </span>
               </div>
-
-              {/* Discount Code Section */}
-              <div className="mx-6 mt-4 p-4 bg-white rounded-lg border border-gray-200">
-                <DiscountCode 
-                  cart={cart as HttpTypes.StoreCart & { promotions: HttpTypes.StorePromotion[] }} 
-                  compact 
-                />
-              </div>
             </>
           ) : (
             /* Empty Cart */
@@ -417,11 +570,24 @@ export default function CartDrawer({ cart }: CartDrawerProps) {
         {/* Footer */}
         {cart && cart.items && cart.items.length > 0 && (
           <div className="border-t border-gray-200 bg-white p-6 space-y-4">
-            {/* Totals */}
+            {/* Dual Totals: Selected vs Total */}
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-600">Subtotal</span>
+                <span className="text-gray-600">
+                  Selected Items ({actualSelectedCount})
+                </span>
                 <span className="font-semibold text-gray-900">
+                  {convertToLocale({
+                    amount: selectedTotal,
+                    currency_code: cart.currency_code,
+                  })}
+                </span>
+              </div>
+              <div className="flex justify-between pb-2 border-b border-gray-200">
+                <span className="text-gray-500">
+                  Total in Cart ({totalItems})
+                </span>
+                <span className="text-gray-500">
                   {convertToLocale({
                     amount: subtotal,
                     currency_code: cart.currency_code,
@@ -453,16 +619,16 @@ export default function CartDrawer({ cart }: CartDrawerProps) {
               </div>
               <span className="text-xl font-bold text-gray-900">
                 {convertToLocale({
-                  amount: total,
+                  amount: selectedTotal,
                   currency_code: cart.currency_code,
                 })}
               </span>
             </div>
 
-            {/* Checkout Button */}
+            {/* Checkout Button - Disabled when no selection */}
             <button
               onClick={handleCheckout}
-              disabled={isRedirecting}
+              disabled={isRedirecting || !hasSelectedItems}
               className="w-full h-14 bg-gray-900 hover:bg-[#F16D34] text-white font-bold uppercase tracking-wider flex items-center justify-center gap-3 transition-all disabled:opacity-75 disabled:cursor-not-allowed"
             >
               {isRedirecting ? (
@@ -488,9 +654,10 @@ export default function CartDrawer({ cart }: CartDrawerProps) {
                   </svg>
                   Processing...
                 </>
-              ) : (
+              ) : hasSelectedItems ? (
                 <>
-                  Checkout
+                  Checkout ({actualSelectedCount}{" "}
+                  {actualSelectedCount === 1 ? "item" : "items"})
                   <svg
                     className="w-5 h-5"
                     fill="none"
@@ -505,6 +672,8 @@ export default function CartDrawer({ cart }: CartDrawerProps) {
                     />
                   </svg>
                 </>
+              ) : (
+                "Select items to checkout"
               )}
             </button>
 
@@ -644,8 +813,8 @@ export default function CartDrawer({ cart }: CartDrawerProps) {
                               <span className="text-sm font-bold text-gray-900">
                                 {convertToLocale({
                                   amount:
-                                    variant.calculated_price.calculated_amount ||
-                                    0,
+                                    variant.calculated_price
+                                      .calculated_amount || 0,
                                   currency_code: cart?.currency_code || "PHP",
                                 })}
                               </span>
@@ -683,10 +852,7 @@ export default function CartDrawer({ cart }: CartDrawerProps) {
               {changingVariant && (
                 <div className="px-6 py-4 border-t border-gray-100">
                   <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
-                    <svg
-                      className="animate-spin h-4 w-4"
-                      viewBox="0 0 24 24"
-                    >
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
                       <circle
                         className="opacity-25"
                         cx="12"

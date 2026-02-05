@@ -7,6 +7,7 @@ import { CheckCircleSolid, CreditCard } from "@medusajs/icons"
 import { Container, Heading, Text, clx } from "@medusajs/ui"
 import ErrorMessage from "@modules/checkout/components/error-message"
 import PaymentContainer from "@modules/checkout/components/payment-container"
+import StripePayment from "@modules/checkout/components/payment-stripe"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useCallback, useEffect, useState } from "react"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
@@ -40,7 +41,45 @@ const Payment = ({
 
   const setPaymentMethod = async (method: string) => {
     setError(null)
+    setOrderError(null)
+
+    console.log("[Payment] Selected payment method:", method)
+    console.log("[Payment] Cart ID:", cart.id)
+    console.log("[Payment] Cart payment collection:", cart.payment_collection)
+
+    // Check if cart has payment collection
+    if (!cart.payment_collection) {
+      console.error("[Payment] ❌ Cart has no payment collection!")
+      setError(
+        "Cart is not ready for payment. Please refresh the page and try again."
+      )
+      return
+    }
+
     setSelectedPaymentMethod(method)
+
+    // Initiate payment session when method is selected
+    try {
+      console.log("[Payment] Initiating payment session for provider:", method)
+      const result = await initiatePaymentSession(cart, {
+        provider_id: method,
+      })
+      console.log(
+        "[Payment] ✅ Payment session initiated successfully:",
+        result
+      )
+
+      // The result should contain the updated cart with payment session
+      // Force page reload to get fresh cart data with client_secret
+      console.log("[Payment] Reloading page to fetch updated cart...")
+      window.location.reload()
+    } catch (err: any) {
+      console.error("[Payment] ❌ Failed to initiate payment session:", err)
+      console.error("[Payment] Error details:", err)
+      setError(
+        err.message || "Failed to initialize payment method. Please try again."
+      )
+    }
   }
 
   const paidByGiftcard =
@@ -82,7 +121,7 @@ const Payment = ({
   const canPlaceOrder =
     agreedToTerms && !notReady && (paidByGiftcard || selectedPaymentMethod)
 
-  // Handle place order for manual/COD payments
+  // Handle place order for manual/COD payments (not Stripe)
   const handlePlaceOrder = async () => {
     setSubmitting(true)
     setOrderError(null)
@@ -105,6 +144,16 @@ const Payment = ({
       setOrderError(err.message || "Failed to place order")
       setSubmitting(false)
     }
+  }
+
+  // Handle Stripe payment success
+  const handleStripeSuccess = () => {
+    setOrderSuccess(true)
+  }
+
+  // Handle Stripe payment error
+  const handleStripeError = (errorMessage: string) => {
+    setOrderError(errorMessage)
   }
 
   useEffect(() => {
@@ -141,6 +190,12 @@ const Payment = ({
       </div>
     )
   }
+
+  // Check if Stripe is selected (handle multiple Stripe provider IDs)
+  const isStripeSelected =
+    selectedPaymentMethod === "stripe" ||
+    selectedPaymentMethod?.startsWith("pp_stripe") ||
+    selectedPaymentMethod?.includes("stripe")
 
   return (
     <div className="p-6">
@@ -188,14 +243,36 @@ const Payment = ({
                 onChange={(value: string) => setPaymentMethod(value)}
                 className="space-y-3"
               >
-                {availablePaymentMethods.map((paymentMethod) => (
-                  <PaymentContainer
-                    key={paymentMethod.id}
-                    paymentInfoMap={paymentInfoMap}
-                    paymentProviderId={paymentMethod.id}
-                    selectedPaymentOptionId={selectedPaymentMethod}
-                  />
-                ))}
+                {availablePaymentMethods.map((paymentMethod) => {
+                  const isThisStripe =
+                    paymentMethod.id === "stripe" ||
+                    paymentMethod.id?.startsWith("pp_stripe") ||
+                    paymentMethod.id?.includes("stripe")
+
+                  return (
+                    <PaymentContainer
+                      key={paymentMethod.id}
+                      paymentInfoMap={paymentInfoMap}
+                      paymentProviderId={paymentMethod.id}
+                      selectedPaymentOptionId={selectedPaymentMethod}
+                    >
+                      {/* Show Stripe form inside accordion when this payment method is selected */}
+                      {isThisStripe &&
+                        selectedPaymentMethod === paymentMethod.id &&
+                        agreedToTerms && (
+                          <div className="mt-4 pt-4 border-t border-gray-200">
+                            <StripePayment
+                              cart={cart}
+                              onSuccess={handleStripeSuccess}
+                              onError={handleStripeError}
+                              submitting={submitting}
+                              setSubmitting={setSubmitting}
+                            />
+                          </div>
+                        )}
+                    </PaymentContainer>
+                  )
+                })}
               </RadioGroup>
             </div>
           )}
@@ -214,7 +291,7 @@ const Payment = ({
           />
 
           {/* Terms and Conditions Checkbox */}
-          <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+          <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg mb-6">
             <label className="flex items-start gap-3 cursor-pointer">
               <input
                 type="checkbox"
@@ -266,62 +343,66 @@ const Payment = ({
             </div>
           )}
 
-          {/* Place Order Button */}
-          <button
-            onClick={handlePlaceOrder}
-            disabled={!canPlaceOrder || submitting}
-            className="w-full h-14 mt-6 bg-[#F16D34] hover:bg-[#d55a24] text-white font-bold text-base uppercase tracking-wider rounded-lg transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            data-testid="submit-order-button"
-          >
-            {submitting ? (
-              <>
-                <svg
-                  className="animate-spin h-5 w-5 text-white"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                    fill="none"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  />
-                </svg>
-                Processing Order...
-              </>
-            ) : (
-              <>
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-                Place Order
-              </>
-            )}
-          </button>
+          {/* Place Order Button (for non-Stripe payments) */}
+          {!isStripeSelected && (
+            <>
+              <button
+                onClick={handlePlaceOrder}
+                disabled={!canPlaceOrder || submitting}
+                className="w-full h-14 mt-6 bg-[#F16D34] hover:bg-[#d55a24] text-white font-bold text-base uppercase tracking-wider rounded-lg transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                data-testid="submit-order-button"
+              >
+                {submitting ? (
+                  <>
+                    <svg
+                      className="animate-spin h-5 w-5 text-white"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        fill="none"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      />
+                    </svg>
+                    Processing Order...
+                  </>
+                ) : (
+                  <>
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                    Place Order
+                  </>
+                )}
+              </button>
 
-          {/* Helper text */}
-          {!agreedToTerms && (
-            <p className="mt-3 text-xs text-gray-500 text-center">
-              Please agree to the Terms of Service and Privacy Policy to place
-              your order.
-            </p>
+              {/* Helper text */}
+              {!agreedToTerms && (
+                <p className="mt-3 text-xs text-gray-500 text-center">
+                  Please agree to the Terms of Service and Privacy Policy to
+                  place your order.
+                </p>
+              )}
+            </>
           )}
         </div>
       ) : (

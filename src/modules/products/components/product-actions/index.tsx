@@ -10,6 +10,7 @@ import ProductPrice from "../product-price"
 import MobileActions from "./mobile-actions"
 import { useRouter } from "next/navigation"
 import { useCartDrawer } from "@lib/context/cart-drawer-context"
+import { useCartLimitModal } from "@lib/context/cart-limit-modal-context"
 import { isColorOption, isSizeOption } from "@lib/util/variant-helpers"
 import ColorSwatch from "./color-swatch"
 import SizeSelector from "./size-selector"
@@ -118,6 +119,7 @@ export default function ProductActions({
   const actionsRef = useRef<HTMLDivElement>(null)
   const inView = useIntersection(actionsRef, "0px")
   const { openCart } = useCartDrawer()
+  const { showCartLimitModal } = useCartLimitModal()
 
   // add the selected variant to the cart
   const handleAddToCart = async () => {
@@ -125,14 +127,24 @@ export default function ProductActions({
 
     setIsAdding(true)
 
-    await addToCart({
-      variantId: selectedVariant.id,
-      quantity: quantity,
-      countryCode,
-    })
-
-    setIsAdding(false)
-    openCart()
+    try {
+      await addToCart({
+        variantId: selectedVariant.id,
+        quantity: quantity,
+        countryCode,
+      })
+      openCart()
+    } catch (error: any) {
+      // Check if it's a cart limit error
+      if (error.message?.startsWith("CART_LIMIT_EXCEEDED:")) {
+        const [, currentCount, limit] = error.message.split(":")
+        showCartLimitModal(parseInt(currentCount), parseInt(limit))
+      } else {
+        console.error("Failed to add to cart:", error)
+      }
+    } finally {
+      setIsAdding(false)
+    }
   }
 
   // Quantity handlers

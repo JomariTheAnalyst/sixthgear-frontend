@@ -2,14 +2,19 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react"
 
+const CART_LIMIT = 49
+
 type SelectedItemsContextType = {
   selectedItems: Set<string>
-  toggleItem: (itemId: string) => void
+  toggleItem: (itemId: string, isOutOfStock?: boolean) => void
   selectAll: (itemIds: string[]) => void
   deselectAll: () => void
+  removeSelectedItems: (itemIds: string[]) => void
   isSelected: (itemId: string) => boolean
   hasSelectedItems: boolean
   selectedCount: number
+  cartLimit: number
+  isLoading: boolean
 }
 
 const SelectedItemsContext = createContext<SelectedItemsContextType | null>(
@@ -22,29 +27,43 @@ export function SelectedItemsProvider({
   children: React.ReactNode
 }) {
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set())
+  const [isLoading, setIsLoading] = useState(true)
 
   // Load from localStorage on mount
   useEffect(() => {
-    const stored = localStorage.getItem("selectedCartItems")
-    if (stored) {
-      try {
+    try {
+      const stored = localStorage.getItem("selectedCartItems")
+      console.log("Loading selected items from localStorage:", stored)
+
+      if (stored) {
         const parsed = JSON.parse(stored)
-        setSelectedItems(new Set(parsed))
-      } catch (e) {
-        console.error("Failed to parse selected items from localStorage", e)
+        console.log("Parsed selected items:", parsed)
+
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setSelectedItems(new Set(parsed))
+          console.log("Set selected items:", parsed.length, "items")
+        }
       }
+    } catch (e) {
+      console.error("Failed to parse selected items from localStorage", e)
+    } finally {
+      setIsLoading(false)
     }
   }, [])
 
   // Save to localStorage whenever selection changes
   useEffect(() => {
-    localStorage.setItem(
-      "selectedCartItems",
-      JSON.stringify(Array.from(selectedItems))
-    )
-  }, [selectedItems])
+    if (!isLoading) {
+      const itemsArray = Array.from(selectedItems)
+      localStorage.setItem("selectedCartItems", JSON.stringify(itemsArray))
+      console.log("Saved selected items to localStorage:", itemsArray)
+    }
+  }, [selectedItems, isLoading])
 
-  const toggleItem = (itemId: string) => {
+  const toggleItem = (itemId: string, isOutOfStock = false) => {
+    // Don't allow selecting out-of-stock items
+    if (isOutOfStock) return
+
     setSelectedItems((prev) => {
       const newSet = new Set(prev)
       if (newSet.has(itemId)) {
@@ -64,6 +83,14 @@ export function SelectedItemsProvider({
     setSelectedItems(new Set())
   }
 
+  const removeSelectedItems = (itemIds: string[]) => {
+    setSelectedItems((prev) => {
+      const newSet = new Set(prev)
+      itemIds.forEach((id) => newSet.delete(id))
+      return newSet
+    })
+  }
+
   const isSelected = (itemId: string) => {
     return selectedItems.has(itemId)
   }
@@ -78,9 +105,12 @@ export function SelectedItemsProvider({
         toggleItem,
         selectAll,
         deselectAll,
+        removeSelectedItems,
         isSelected,
         hasSelectedItems,
         selectedCount,
+        cartLimit: CART_LIMIT,
+        isLoading,
       }}
     >
       {children}

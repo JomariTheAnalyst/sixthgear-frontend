@@ -1,6 +1,6 @@
 "use client"
 
-import { Table, Text, clx } from "@medusajs/ui"
+import { Table, Text, clx, Checkbox, Badge } from "@medusajs/ui"
 import { updateLineItem } from "@lib/data/cart"
 import { HttpTypes } from "@medusajs/types"
 import CartItemSelect from "@modules/cart/components/cart-item-select"
@@ -13,6 +13,12 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
 import Spinner from "@modules/common/icons/spinner"
 import Thumbnail from "@modules/products/components/thumbnail"
 import { useState } from "react"
+import { useSelectedItems } from "@lib/context/selected-cart-items-context"
+import {
+  getStockStatus,
+  getStockLabel,
+  isItemOutOfStock,
+} from "@lib/util/cart-helpers"
 
 type ItemProps = {
   item: HttpTypes.StoreCartLineItem
@@ -23,6 +29,11 @@ type ItemProps = {
 const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
   const [updating, setUpdating] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const { isSelected, toggleItem } = useSelectedItems()
+
+  const stockStatus = getStockStatus(item)
+  const outOfStock = isItemOutOfStock(item)
+  const inventoryQty = item.variant?.inventory_quantity || 0
 
   const changeQuantity = async (quantity: number) => {
     setError(null)
@@ -40,13 +51,37 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
       })
   }
 
-  // TODO: Update this to grab the actual max inventory
-  const maxQtyFromInventory = 10
-  const maxQuantity = item.variant?.manage_inventory ? 10 : maxQtyFromInventory
+  const maxQtyFromInventory = item.variant?.inventory_quantity || 10
+  const maxQuantity = item.variant?.manage_inventory ? maxQtyFromInventory : 10
+
+  const handleCheckboxChange = () => {
+    toggleItem(item.id, outOfStock)
+  }
 
   return (
-    <Table.Row className="w-full" data-testid="product-row">
-      <Table.Cell className="!pl-0 p-4 w-24">
+    <Table.Row
+      className={clx("w-full", {
+        "opacity-60": outOfStock,
+      })}
+      data-testid="product-row"
+    >
+      {/* Checkbox Column */}
+      {type === "full" && (
+        <Table.Cell className="!pl-0 p-4 w-12">
+          <Checkbox
+            checked={isSelected(item.id)}
+            onCheckedChange={handleCheckboxChange}
+            disabled={outOfStock}
+            className="cursor-pointer"
+          />
+        </Table.Cell>
+      )}
+
+      <Table.Cell
+        className={clx("p-4 w-24", {
+          "!pl-0": type === "preview",
+        })}
+      >
         <LocalizedClientLink
           href={`/products/${item.product_handle}`}
           className={clx("flex", {
@@ -70,6 +105,18 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
           {item.product_title}
         </Text>
         <LineItemOptions variant={item.variant} data-testid="product-variant" />
+
+        {/* Stock Status Badges */}
+        {stockStatus === "out_of_stock" && (
+          <Badge color="red" className="mt-2">
+            {getStockLabel(stockStatus)}
+          </Badge>
+        )}
+        {stockStatus === "low_stock" && (
+          <Badge color="orange" className="mt-2">
+            {getStockLabel(stockStatus, inventoryQty)}
+          </Badge>
+        )}
       </Table.Cell>
 
       {type === "full" && (
@@ -80,9 +127,9 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
               value={item.quantity}
               onChange={(value) => changeQuantity(parseInt(value.target.value))}
               className="w-14 h-10 p-4"
+              disabled={outOfStock}
               data-testid="product-select-button"
             >
-              {/* TODO: Update this with the v2 way of managing inventory */}
               {Array.from(
                 {
                   length: Math.min(maxQuantity, 10),
@@ -93,10 +140,6 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
                   </option>
                 )
               )}
-
-              <option value={1} key={1}>
-                1
-              </option>
             </CartItemSelect>
             {updating && <Spinner />}
           </div>
