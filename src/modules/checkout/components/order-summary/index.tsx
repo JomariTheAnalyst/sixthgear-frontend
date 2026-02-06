@@ -3,7 +3,7 @@
 import { HttpTypes } from "@medusajs/types"
 import { convertToLocale } from "@lib/util/money"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
-import TrustSignals from "../trust-signals"
+import DiscountCode from "@modules/checkout/components/discount-code"
 import { ChevronDown, ChevronUpMini } from "@medusajs/icons"
 import { useState } from "react"
 import Image from "next/image"
@@ -37,6 +37,7 @@ const OrderSummary = ({ cart, className = "" }: OrderSummaryProps) => {
       0
     ) || 0
 
+  const discountTotal = cart.discount_total || 0
   const taxTotal = cart.tax_total || 0
   const total = cart.total || 0
 
@@ -133,10 +134,15 @@ const OrderSummary = ({ cart, className = "" }: OrderSummaryProps) => {
           {/* Edit Cart Link */}
           <LocalizedClientLink
             href="/cart"
-            className="block text-center text-sm font-medium text-[#F16D34] hover:text-[#d55a24] transition-colors"
+            className="block text-center text-sm font-medium text-gray-900 hover:text-gray-700 transition-colors"
           >
             Edit Cart
           </LocalizedClientLink>
+
+          {/* Discount Code */}
+          <div className="pt-4 border-t border-gray-200">
+            <DiscountCode cart={cart as any} compact />
+          </div>
 
           {/* Pricing Breakdown */}
           <div className="pt-4 border-t border-gray-200 space-y-3">
@@ -150,6 +156,19 @@ const OrderSummary = ({ cart, className = "" }: OrderSummaryProps) => {
               </span>
             </div>
 
+            {discountTotal > 0 && (
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-600">Discount</span>
+                <span className="font-medium text-green-600">
+                  -{" "}
+                  {convertToLocale({
+                    amount: discountTotal,
+                    currency_code: cart.currency_code,
+                  })}
+                </span>
+              </div>
+            )}
+
             {shippingTotal > 0 ? (
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-600">Shipping</span>
@@ -160,12 +179,17 @@ const OrderSummary = ({ cart, className = "" }: OrderSummaryProps) => {
                   })}
                 </span>
               </div>
-            ) : cart.shipping_methods?.length > 0 ? (
+            ) : cart.shipping_methods && cart.shipping_methods.length > 0 ? (
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-600">Shipping</span>
                 <span className="font-medium text-green-600">Free</span>
               </div>
-            ) : null}
+            ) : (
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-600">Shipping</span>
+                <span className="text-sm text-gray-500">0</span>
+              </div>
+            )}
 
             {taxTotal > 0 && (
               <div className="flex items-center justify-between text-sm">
@@ -189,11 +213,6 @@ const OrderSummary = ({ cart, className = "" }: OrderSummaryProps) => {
                 })}
               </span>
             </div>
-          </div>
-
-          {/* Trust Signals */}
-          <div className="pt-4 border-t border-gray-200">
-            <TrustSignals variant="full" />
           </div>
         </div>
       </div>

@@ -23,8 +23,8 @@ export default async function OrderConfirmedPage(props: Props) {
 
   return (
     <>
-      {/* Force refresh cart on page load */}
-      {searchParams.refresh && <CartRefresh />}
+      {/* Force refresh cart on page load - always refresh */}
+      <CartRefresh />
 
       <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
         <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
@@ -91,7 +91,7 @@ export default async function OrderConfirmedPage(props: Props) {
           <div className="space-y-3">
             <Link
               href={`/${params.countryCode}`}
-              className="block w-full px-6 py-3 bg-[#F16D34] text-white font-semibold rounded-lg hover:bg-[#d55a24] transition-colors"
+              className="block w-full px-6 py-3 bg-gray-900 text-white font-semibold rounded-lg hover:bg-gray-800 transition-colors"
             >
               Continue Shopping
             </Link>

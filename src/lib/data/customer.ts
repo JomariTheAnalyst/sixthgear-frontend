@@ -293,3 +293,69 @@ export const updateCustomerAddress = async (
       return { success: false, error: err.toString() }
     })
 }
+
+export async function requestPasswordReset(
+  _currentState: unknown,
+  formData: FormData
+) {
+  const email = formData.get("email") as string
+
+  if (!email) {
+    return "Email is required"
+  }
+
+  try {
+    // Request password reset from Medusa backend
+    await sdk.client.fetch(`/auth/customer/emailpass/reset-password`, {
+      method: "POST",
+      body: {
+        identifier: email,
+      },
+    })
+
+    return "success"
+  } catch (error: any) {
+    console.error("Password reset request error:", error)
+    return "Failed to send reset email. Please try again."
+  }
+}
+
+export async function resetPassword(
+  _currentState: unknown,
+  formData: FormData
+) {
+  const token = formData.get("token") as string
+  const password = formData.get("password") as string
+  const confirmPassword = formData.get("confirm_password") as string
+
+  if (!token || !password || !confirmPassword) {
+    return "All fields are required"
+  }
+
+  if (password !== confirmPassword) {
+    return "Passwords do not match"
+  }
+
+  if (password.length < 8) {
+    return "Password must be at least 8 characters"
+  }
+
+  try {
+    // Reset password using token
+    await sdk.client.fetch(`/auth/customer/emailpass/update`, {
+      method: "POST",
+      body: {
+        email: formData.get("email") as string,
+        password: password,
+      },
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+
+    return "success"
+  } catch (error: any) {
+    console.error("Password reset error:", error)
+    return "Failed to reset password. The link may have expired."
+  }
+}

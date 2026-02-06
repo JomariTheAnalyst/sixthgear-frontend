@@ -11,6 +11,7 @@ import Footer from "@modules/layout/templates/footer"
 import Nav from "@modules/layout/templates/nav"
 import FreeShippingPriceNudge from "@modules/shipping/components/free-shipping-price-nudge"
 import CartDrawerWrapper from "@modules/cart/components/cart-drawer-wrapper"
+import CartCleanup from "@modules/cart/components/cart-cleanup"
 import { MarketingProvider } from "@modules/marketing"
 import PreviewBanner from "@modules/marketing/components/preview-banner"
 import { SelectedItemsProvider } from "@lib/context/selected-cart-items-context"
@@ -39,6 +40,9 @@ export default async function PageLayout(props: { children: React.ReactNode }) {
     <CartLimitModalProvider>
       <SelectedItemsProvider>
         <CartDrawerWrapper cart={cart}>
+          {/* Cart cleanup component - removes shipping methods when leaving checkout */}
+          <CartCleanup cartId={cart?.id} />
+
           <MarketingProvider marketing={marketing}>
             <Nav />
             {customer && cart && (

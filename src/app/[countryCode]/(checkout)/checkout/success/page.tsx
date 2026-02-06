@@ -128,9 +128,8 @@ export default async function CheckoutSuccessPage(props: Props) {
     )
 
     // Redirect to order confirmation with order ID
-    // Use replace to prevent back button issues
     redirect(
-      `/${params.countryCode}/order/confirmed?session_id=${session_id}&order_id=${order_id}&refresh=1`
+      `/${params.countryCode}/order/confirmed?session_id=${session_id}&order_id=${order_id}`
     )
   } catch (error: any) {
     console.error("[Checkout Success] ❌ Error:", error.message)

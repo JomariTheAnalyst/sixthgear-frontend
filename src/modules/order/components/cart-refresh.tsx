@@ -4,16 +4,17 @@ import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 
 /**
- * Client component to force refresh cart after order completion
- * This ensures the cart drawer shows empty immediately
+ * Client component to refresh cart after order completion
+ * Single refresh is sufficient as cart cookie is already cleared server-side
  */
 export default function CartRefresh() {
   const router = useRouter()
 
   useEffect(() => {
-    // Force refresh to clear cart from UI
+    // Single refresh to update client-side cache
+    // Cart cookie is already cleared server-side in success page
     router.refresh()
-  }, [router])
+  }, [])
 
   return null
 }

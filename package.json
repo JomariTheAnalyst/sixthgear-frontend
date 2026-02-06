@@ -12,7 +12,16 @@
     "build": "next build",
     "start": "next start -p 8000",
     "lint": "next lint",
-    "analyze": "ANALYZE=true next build"
+    "analyze": "ANALYZE=true next build",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:report": "playwright show-report",
+    "test:e2e:codegen": "playwright codegen http://localhost:8000",
+    "test:checkout": "playwright test tests/e2e/checkout",
+    "test:checkout:stripe": "playwright test tests/e2e/checkout-stripe",
+    "test:checkout:cod": "playwright test tests/e2e/checkout-cod"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.0",
