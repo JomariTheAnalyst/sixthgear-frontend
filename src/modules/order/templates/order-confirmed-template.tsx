@@ -28,15 +28,63 @@ export default function OrderConfirmedTemplate() {
   useEffect(() => {
     const checkOrderStatus = async () => {
       try {
-        // Priority 1: If we have an order ID, show success
+        // Priority 1: If we have an order ID, fetch full order details
         if (orderId) {
-          console.log("[Order Confirmed] Order ID:", orderId)
-          setOrderData({
-            id: orderId,
-            message: "Order created successfully!",
-          })
-          setLoading(false)
-          return
+          console.log("[Order Confirmed] Fetching order details:", orderId)
+
+          try {
+            const response = await fetch(
+              `${process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL}/store/orders/${orderId}`,
+              {
+                credentials: "include",
+              }
+            )
+
+            if (response.ok) {
+              const { order } = await response.json()
+              console.log("[Order Confirmed] Order details:", order)
+
+              // Detect payment method
+              const isCOD =
+                order.payment_collections?.[0]?.payment_sessions?.[0]
+                  ?.provider_id === "pp_system_default" ||
+                order.metadata?.payment_provider === "pp_system_default"
+
+              setOrderData({
+                id: order.id,
+                display_id: order.display_id,
+                custom_display_id: order.custom_display_id,
+                email: order.email,
+                total: order.total,
+                currency_code: order.currency_code,
+                created_at: order.created_at,
+                status: order.status,
+                is_cod: isCOD,
+                message: "Order created successfully!",
+              })
+              setLoading(false)
+              return
+            } else {
+              console.warn(
+                "[Order Confirmed] Failed to fetch order details, using order ID only"
+              )
+              setOrderData({
+                id: orderId,
+                message: "Order created successfully!",
+              })
+              setLoading(false)
+              return
+            }
+          } catch (fetchError) {
+            console.error("[Order Confirmed] Error fetching order:", fetchError)
+            // Fallback to just showing order ID
+            setOrderData({
+              id: orderId,
+              message: "Order created successfully!",
+            })
+            setLoading(false)
+            return
+          }
         }
 
         // Priority 2: If we have a cart ID, check if it's completed
@@ -150,15 +198,34 @@ export default function OrderConfirmedTemplate() {
                 </h2>
                 <div className="bg-gray-50 rounded-lg p-6 space-y-3">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Order ID:</span>
-                    <span className="font-mono text-sm text-gray-900">
-                      {orderData.id}
+                    <span className="text-gray-600">Order Number:</span>
+                    <span className="font-semibold text-lg text-gray-900">
+                      {orderData.custom_display_id ||
+                        `#${orderData.display_id}` ||
+                        orderData.id}
                     </span>
                   </div>
                   {orderData.email && (
                     <div className="flex justify-between">
                       <span className="text-gray-600">Email:</span>
                       <span className="text-gray-900">{orderData.email}</span>
+                    </div>
+                  )}
+                  {orderData.created_at && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Order Date:</span>
+                      <span className="text-gray-900">
+                        {new Date(orderData.created_at).toLocaleDateString(
+                          "en-PH",
+                          {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          }
+                        )}
+                      </span>
                     </div>
                   )}
                   {orderData.total && (
@@ -211,6 +278,52 @@ export default function OrderConfirmedTemplate() {
               <h2 className="text-lg font-semibold text-gray-900 mb-4">
                 What's Next?
               </h2>
+
+              {/* COD Payment Notice */}
+              {orderData?.is_cod && orderData?.total && (
+                <div className="mb-6 bg-yellow-50 border-2 border-yellow-400 rounded-lg p-6">
+                  <div className="flex items-start gap-3">
+                    <svg
+                      className="w-6 h-6 text-yellow-600 flex-shrink-0 mt-0.5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    <div className="flex-1">
+                      <h3 className="font-bold text-yellow-900 mb-2 text-lg">
+                        Cash on Delivery - Payment Instructions
+                      </h3>
+                      <p className="text-yellow-800 mb-3">
+                        Please prepare the exact amount for payment upon
+                        delivery:
+                      </p>
+                      <div className="bg-white rounded-lg p-4 border-2 border-yellow-300">
+                        <p className="text-2xl font-bold text-gray-900">
+                          {new Intl.NumberFormat("en-PH", {
+                            style: "currency",
+                            currency: orderData.currency_code || "PHP",
+                          }).format(orderData.total / 100)}
+                        </p>
+                        <p className="text-sm text-gray-600 mt-1">
+                          Total Amount Due
+                        </p>
+                      </div>
+                      <p className="text-sm text-yellow-800 mt-3">
+                        💡 Tip: Having the exact amount ready helps speed up the
+                        delivery process!
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-4">
                 <div className="flex items-start gap-4">
                   <div className="flex-shrink-0 w-8 h-8 bg-[#F16D34] text-white rounded-full flex items-center justify-center font-bold">

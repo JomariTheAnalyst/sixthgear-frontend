@@ -2,10 +2,11 @@
 
 import { HttpTypes } from "@medusajs/types"
 import { convertToLocale } from "@lib/util/money"
+import { useSelectedItems } from "@lib/context/selected-cart-items-context"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import DiscountCode from "@modules/checkout/components/discount-code"
 import { ChevronDown, ChevronUpMini } from "@medusajs/icons"
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import Image from "next/image"
 
 interface OrderSummaryProps {
@@ -18,18 +19,32 @@ interface OrderSummaryProps {
  *
  * Sticky sidebar on desktop showing cart items, pricing breakdown, and trust signals
  * Collapsible on mobile to save space
+ * FILTERS to show only selected items
  */
 const OrderSummary = ({ cart, className = "" }: OrderSummaryProps) => {
   const [isExpanded, setIsExpanded] = useState(false)
+  const { selectedItems } = useSelectedItems()
 
-  const itemCount =
-    cart.items?.reduce((sum, item) => sum + item.quantity, 0) || 0
+  // Filter to show only selected items
+  const allItems = cart.items || []
+  const displayItems = useMemo(
+    () => allItems.filter((item) => selectedItems.has(item.id)),
+    [allItems, selectedItems]
+  )
 
-  const subtotal =
-    cart.items?.reduce(
-      (sum, item) => sum + (item.unit_price || 0) * item.quantity,
-      0
-    ) || 0
+  const itemCount = useMemo(
+    () => displayItems.reduce((sum, item) => sum + item.quantity, 0),
+    [displayItems]
+  )
+
+  const subtotal = useMemo(
+    () =>
+      displayItems.reduce(
+        (sum, item) => sum + (item.unit_price || 0) * item.quantity,
+        0
+      ),
+    [displayItems]
+  )
 
   const shippingTotal =
     cart.shipping_methods?.reduce(
@@ -39,7 +54,23 @@ const OrderSummary = ({ cart, className = "" }: OrderSummaryProps) => {
 
   const discountTotal = cart.discount_total || 0
   const taxTotal = cart.tax_total || 0
-  const total = cart.total || 0
+
+  // Calculate total from SELECTED items only (not cart.total)
+  const total = useMemo(() => {
+    const selectedSubtotal = subtotal
+    const calculatedTotal =
+      selectedSubtotal - discountTotal + shippingTotal + taxTotal
+
+    console.log("[Order Summary] Calculating total...")
+    console.log("[Order Summary] Selected items:", displayItems.length)
+    console.log("[Order Summary] Selected subtotal:", selectedSubtotal)
+    console.log("[Order Summary] Discount:", discountTotal)
+    console.log("[Order Summary] Shipping:", shippingTotal)
+    console.log("[Order Summary] Tax:", taxTotal)
+    console.log("[Order Summary] Final total:", calculatedTotal)
+
+    return calculatedTotal
+  }, [subtotal, discountTotal, shippingTotal, taxTotal, displayItems.length])
 
   return (
     <div className={className}>
@@ -86,49 +117,55 @@ const OrderSummary = ({ cart, className = "" }: OrderSummaryProps) => {
             </p>
           </div>
 
-          {/* Cart Items */}
+          {/* Cart Items - Only Selected */}
           <div className="space-y-4 max-h-[400px] overflow-y-auto">
-            {cart.items?.map((item) => (
-              <div key={item.id} className="flex gap-4">
-                {/* Product Image */}
-                <div className="relative w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                  {item.thumbnail ? (
-                    <Image
-                      src={item.thumbnail}
-                      alt={item.product_title || "Product"}
-                      fill
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
-                      No image
+            {displayItems.length > 0 ? (
+              displayItems.map((item) => (
+                <div key={item.id} className="flex gap-4">
+                  {/* Product Image */}
+                  <div className="relative w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                    {item.thumbnail ? (
+                      <Image
+                        src={item.thumbnail}
+                        alt={item.product_title || "Product"}
+                        fill
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
+                        No image
+                      </div>
+                    )}
+                    {/* Quantity Badge */}
+                    <div className="absolute -top-2 -right-2 w-6 h-6 bg-gray-900 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                      {item.quantity}
                     </div>
-                  )}
-                  {/* Quantity Badge */}
-                  <div className="absolute -top-2 -right-2 w-6 h-6 bg-gray-900 text-white text-xs font-bold rounded-full flex items-center justify-center">
-                    {item.quantity}
+                  </div>
+
+                  {/* Product Info */}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-sm font-medium text-gray-900 truncate">
+                      {item.product_title}
+                    </h3>
+                    {item.variant_title && (
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        {item.variant_title}
+                      </p>
+                    )}
+                    <p className="text-sm font-semibold text-gray-900 mt-1">
+                      {convertToLocale({
+                        amount: (item.unit_price || 0) * item.quantity,
+                        currency_code: cart.currency_code,
+                      })}
+                    </p>
                   </div>
                 </div>
-
-                {/* Product Info */}
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-medium text-gray-900 truncate">
-                    {item.product_title}
-                  </h3>
-                  {item.variant_title && (
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      {item.variant_title}
-                    </p>
-                  )}
-                  <p className="text-sm font-semibold text-gray-900 mt-1">
-                    {convertToLocale({
-                      amount: (item.unit_price || 0) * item.quantity,
-                      currency_code: cart.currency_code,
-                    })}
-                  </p>
-                </div>
+              ))
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                No items selected for checkout
               </div>
-            ))}
+            )}
           </div>
 
           {/* Edit Cart Link */}

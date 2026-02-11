@@ -33,7 +33,7 @@ export default async function CheckoutSuccessPage(props: Props) {
 
   console.log("[Checkout Success] Session ID:", session_id)
 
-  // Create order from Stripe payment
+  // Wait for webhook to create order
   try {
     // Get cart ID from Stripe session
     console.log("[Checkout Success] Fetching Stripe session...")
@@ -70,55 +70,67 @@ export default async function CheckoutSuccessPage(props: Props) {
       )
     }
 
-    console.log("[Checkout Success] Creating order for cart:", cartId)
+    console.log("[Checkout Success] Waiting for webhook to create order...")
 
-    // Create order from cart
-    const backendUrl =
-      process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL ||
-      process.env.MEDUSA_BACKEND_URL
-    const orderResponse = await fetch(
-      `${backendUrl}/store/orders/create-from-stripe`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-publishable-api-key":
-            process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY || "",
-        },
-        body: JSON.stringify({
-          cart_id: cartId,
-          stripe_session_id: session_id,
-        }),
-      }
-    )
+    // Poll for order creation (webhook should create it)
+    // Try up to 10 times with 1 second delay
+    let order_id = null
+    const maxAttempts = 10
 
-    if (!orderResponse.ok) {
-      const errorData = await orderResponse.json()
-      console.error("[Checkout Success] ❌ Failed to create order:", {
-        status: orderResponse.status,
-        error: errorData,
-      })
-      // Still redirect to thank you page even if order creation fails
-      redirect(
-        `/${params.countryCode}/order/confirmed?session_id=${session_id}&cart_id=${cartId}`
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      console.log(
+        `[Checkout Success] Checking for order (attempt ${attempt}/${maxAttempts})...`
       )
+
+      // Wait 1 second before checking
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+
+      // Check if order exists for this cart
+      const backendUrl =
+        process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL ||
+        process.env.MEDUSA_BACKEND_URL
+
+      try {
+        const ordersResponse = await fetch(
+          `${backendUrl}/store/orders?cart_id=${cartId}`,
+          {
+            headers: {
+              "x-publishable-api-key":
+                process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY || "",
+            },
+          }
+        )
+
+        if (ordersResponse.ok) {
+          const { orders } = await ordersResponse.json()
+          if (orders && orders.length > 0) {
+            order_id = orders[0].id
+            console.log(`[Checkout Success] ✅ Order found: ${order_id}`)
+            break
+          }
+        }
+      } catch (checkError) {
+        console.error(
+          `[Checkout Success] Error checking for order:`,
+          checkError
+        )
+      }
     }
 
-    const { order_id, order } = await orderResponse.json()
-    console.log(
-      "[Checkout Success] ✅✅✅ Order created successfully:",
-      order_id
-    )
-    console.log("[Checkout Success] Order details:", {
-      id: order_id,
-      email: order?.email,
-      total: order?.total,
-    })
+    if (!order_id) {
+      console.warn(
+        "[Checkout Success] ⚠️ Order not found after polling, redirecting anyway..."
+      )
+    }
 
     // Clear cart cookie since order is complete
     console.log("[Checkout Success] Clearing cart cookie...")
     const { removeCartId } = await import("@lib/data/cookies")
     await removeCartId()
+
+    // Clear selected items from sessionStorage and localStorage
+    console.log("[Checkout Success] Clearing selected items...")
+    // Note: This runs server-side, so we'll clear on client-side in the confirmed page
 
     // Revalidate cart cache to force refresh
     const { revalidateTag } = await import("next/cache")
@@ -127,10 +139,16 @@ export default async function CheckoutSuccessPage(props: Props) {
       "[Checkout Success] ✅ Cart cookie cleared and cache revalidated"
     )
 
-    // Redirect to order confirmation with order ID
-    redirect(
-      `/${params.countryCode}/order/confirmed?session_id=${session_id}&order_id=${order_id}`
-    )
+    // Redirect to order confirmation
+    if (order_id) {
+      redirect(
+        `/${params.countryCode}/order/confirmed?session_id=${session_id}&order_id=${order_id}`
+      )
+    } else {
+      redirect(
+        `/${params.countryCode}/order/confirmed?session_id=${session_id}&cart_id=${cartId}`
+      )
+    }
   } catch (error: any) {
     console.error("[Checkout Success] ❌ Error:", error.message)
     console.error("[Checkout Success] Stack:", error.stack)

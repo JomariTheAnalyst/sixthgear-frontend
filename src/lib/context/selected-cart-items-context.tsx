@@ -10,6 +10,7 @@ type SelectedItemsContextType = {
   selectAll: (itemIds: string[]) => void
   deselectAll: () => void
   removeSelectedItems: (itemIds: string[]) => void
+  clearAllSelections: () => void // New method to completely clear
   isSelected: (itemId: string) => boolean
   hasSelectedItems: boolean
   selectedCount: number
@@ -32,6 +33,26 @@ export function SelectedItemsProvider({
   // Load from localStorage on mount
   useEffect(() => {
     try {
+      // First, check sessionStorage (set by cart drawer when going to checkout)
+      const sessionStored = sessionStorage.getItem("checkoutSelectedItems")
+      if (sessionStored) {
+        const parsed = JSON.parse(sessionStored)
+        console.log(
+          "Loading selected items from sessionStorage:",
+          parsed.length
+        )
+
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setSelectedItems(new Set(parsed))
+          // Also save to localStorage for persistence
+          localStorage.setItem("selectedCartItems", sessionStored)
+          console.log("Set selected items from sessionStorage:", parsed.length)
+          setIsLoading(false)
+          return
+        }
+      }
+
+      // Fallback to localStorage
       const stored = localStorage.getItem("selectedCartItems")
       console.log("Loading selected items from localStorage:", stored)
 
@@ -45,7 +66,7 @@ export function SelectedItemsProvider({
         }
       }
     } catch (e) {
-      console.error("Failed to parse selected items from localStorage", e)
+      console.error("Failed to parse selected items from storage", e)
     } finally {
       setIsLoading(false)
     }
@@ -91,6 +112,13 @@ export function SelectedItemsProvider({
     })
   }
 
+  const clearAllSelections = () => {
+    setSelectedItems(new Set())
+    sessionStorage.removeItem("checkoutSelectedItems")
+    localStorage.removeItem("selectedCartItems")
+    console.log("[Selected Items] Cleared all selections")
+  }
+
   const isSelected = (itemId: string) => {
     return selectedItems.has(itemId)
   }
@@ -106,6 +134,7 @@ export function SelectedItemsProvider({
         selectAll,
         deselectAll,
         removeSelectedItems,
+        clearAllSelections,
         isSelected,
         hasSelectedItems,
         selectedCount,

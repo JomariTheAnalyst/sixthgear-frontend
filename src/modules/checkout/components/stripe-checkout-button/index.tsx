@@ -140,7 +140,7 @@ export default function StripeCheckoutButton({
               process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY || "",
           },
           body: JSON.stringify({
-            provider_id: "pp_system_default",
+            provider_id: "pp_stripe_stripe",
             data: {
               stripe_checkout: true,
             },
@@ -218,6 +218,18 @@ export default function StripeCheckoutButton({
 
       // Step 3: Create Stripe Checkout Session
       console.log("[Stripe Checkout] Step 3: Creating Stripe checkout...")
+
+      // Get selected item IDs from sessionStorage
+      const selectedItemsJson = sessionStorage.getItem("checkoutSelectedItems")
+      const selectedItemIds = selectedItemsJson
+        ? JSON.parse(selectedItemsJson)
+        : []
+
+      console.log(
+        "[Stripe Checkout] Selected items for checkout:",
+        selectedItemIds.length
+      )
+
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL}/store/checkout-sessions`,
         {
@@ -231,6 +243,7 @@ export default function StripeCheckoutButton({
             cart_id: cart.id,
             payment_collection_id: payment_collection.id,
             payment_session_id: payment_session.id,
+            selected_item_ids: selectedItemIds, // Pass selected items
           }),
         }
       )

@@ -46,7 +46,7 @@ function isCartStuckWithSucceededPayment(cart: any): boolean {
 export async function retrieveCart(cartId?: string, fields?: string) {
   const id = cartId || (await getCartId())
   fields ??=
-    "*items, *region, *items.product, *items.variant, *items.thumbnail, *items.metadata, +items.total, *promotions, +shipping_methods.name, *payment_collection, *payment_collection.payment_sessions, +completed_at"
+    "*items.variant, *items.product.images, *region, +items.total, *promotions, +shipping_methods.name, *payment_collection.payment_sessions, +completed_at"
 
   if (!id) {
     return null
@@ -202,10 +202,6 @@ export async function updateCart(data: HttpTypes.StoreUpdateCart) {
     .then(async ({ cart }: { cart: HttpTypes.StoreCart }) => {
       const cartCacheTag = await getCacheTag("carts")
       revalidateTag(cartCacheTag)
-
-      const fulfillmentCacheTag = await getCacheTag("fulfillment")
-      revalidateTag(fulfillmentCacheTag)
-
       return cart
     })
     .catch(medusaError)
@@ -257,9 +253,6 @@ export async function addToCart({
       .then(async () => {
         const cartCacheTag = await getCacheTag("carts")
         revalidateTag(cartCacheTag)
-
-        const fulfillmentCacheTag = await getCacheTag("fulfillment")
-        revalidateTag(fulfillmentCacheTag)
       })
   } catch (error: any) {
     // If cart is completed, create a new cart and retry
@@ -290,9 +283,6 @@ export async function addToCart({
         .then(async () => {
           const cartCacheTag = await getCacheTag("carts")
           revalidateTag(cartCacheTag)
-
-          const fulfillmentCacheTag = await getCacheTag("fulfillment")
-          revalidateTag(fulfillmentCacheTag)
         })
 
       return
@@ -329,9 +319,6 @@ export async function updateLineItem({
     .then(async () => {
       const cartCacheTag = await getCacheTag("carts")
       revalidateTag(cartCacheTag)
-
-      const fulfillmentCacheTag = await getCacheTag("fulfillment")
-      revalidateTag(fulfillmentCacheTag)
     })
     .catch(medusaError)
 }
@@ -356,9 +343,6 @@ export async function deleteLineItem(lineId: string) {
     .then(async () => {
       const cartCacheTag = await getCacheTag("carts")
       revalidateTag(cartCacheTag)
-
-      const fulfillmentCacheTag = await getCacheTag("fulfillment")
-      revalidateTag(fulfillmentCacheTag)
     })
     .catch(medusaError)
 }
@@ -517,9 +501,6 @@ export async function applyPromotions(codes: string[]) {
     .then(async () => {
       const cartCacheTag = await getCacheTag("carts")
       revalidateTag(cartCacheTag)
-
-      const fulfillmentCacheTag = await getCacheTag("fulfillment")
-      revalidateTag(fulfillmentCacheTag)
     })
     .catch(medusaError)
 }
@@ -634,10 +615,12 @@ export async function setAddresses(currentState: unknown, formData: FormData) {
 
 /**
  * Places an order for a cart. If no cart ID is provided, it will use the cart ID from the cookies.
+ * Supports filtering by selected items for COD and other payment methods.
  * @param cartId - optional - The ID of the cart to place an order for.
+ * @param selectedItemIds - optional - Array of selected item IDs to include in order
  * @returns The cart object if the order was successful, or null if not.
  */
-export async function placeOrder(cartId?: string) {
+export async function placeOrder(cartId?: string, selectedItemIds?: string[]) {
   const id = cartId || (await getCartId())
 
   if (!id) {
@@ -649,6 +632,52 @@ export async function placeOrder(cartId?: string) {
   }
 
   try {
+    // If selected items provided, use custom endpoint
+    if (selectedItemIds && selectedItemIds.length > 0) {
+      console.log("[Cart] Completing cart with selected items:", {
+        cart_id: id,
+        selected_items: selectedItemIds.length,
+      })
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL}/store/complete-cart`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-publishable-api-key":
+              process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY || "",
+            ...headers,
+          },
+          body: JSON.stringify({
+            cart_id: id,
+            selected_item_ids: selectedItemIds,
+          }),
+        }
+      )
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to complete cart")
+      }
+
+      const cartRes = await response.json()
+
+      if (cartRes?.type === "order") {
+        const countryCode =
+          cartRes.order.shipping_address?.country_code?.toLowerCase()
+
+        const orderCacheTag = await getCacheTag("orders")
+        revalidateTag(orderCacheTag)
+
+        removeCartId()
+        redirect(`/${countryCode}/order/${cartRes?.order.id}/confirmed`)
+      }
+
+      return cartRes.cart
+    }
+
+    // Standard flow without item filtering
     const cartRes = await sdk.store.cart
       .complete(id, {}, headers)
       .then(async (cartRes) => {
@@ -742,4 +771,60 @@ export async function listCartOptions() {
     headers,
     cache: "force-cache",
   })
+}
+
+/**
+ * Create a checkout cart from selected items
+ * This creates a new temporary cart containing ONLY the selected items
+ * for checkout, ensuring the order only includes selected items.
+ *
+ * @param cartId - Original cart ID
+ * @param selectedLineItemIds - Array of selected line item IDs
+ * @returns Checkout cart ID and cart object
+ */
+export async function createCheckoutCartFromSelection(
+  cartId: string,
+  selectedLineItemIds: string[]
+) {
+  const headers = {
+    ...(await getAuthHeaders()),
+  }
+
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL}/store/checkout/from-cart-selection`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-publishable-api-key":
+            process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY || "",
+          ...headers,
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          cart_id: cartId,
+          selected_line_item_ids: selectedLineItemIds,
+        }),
+      }
+    )
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.error || "Failed to create checkout cart")
+    }
+
+    const data = await response.json()
+
+    console.log("[Cart] ✅ Checkout cart created:", {
+      checkout_cart_id: data.checkout_cart_id,
+      items: data.checkout_cart.items?.length,
+      total: data.checkout_cart.total,
+    })
+
+    return data
+  } catch (error: any) {
+    console.error("[Cart] Failed to create checkout cart:", error)
+    throw error
+  }
 }

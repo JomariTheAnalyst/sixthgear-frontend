@@ -253,11 +253,14 @@ export default function TrackOrderTemplate() {
                       id="orderNumber"
                       value={orderNumber}
                       onChange={(e) => setOrderNumber(e.target.value)}
-                      placeholder="e.g., 1234"
+                      placeholder="e.g., SIX-000123 or 123"
                       required
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#F16D34] focus:border-transparent outline-none"
                       disabled={loading}
                     />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Enter your order number (found in your confirmation email)
+                    </p>
                   </div>
 
                   {/* Verify By Toggle */}
@@ -371,8 +374,8 @@ export default function TrackOrderTemplate() {
               <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
                 <div>
                   <p className="text-xs text-gray-500 mb-1">Order Number</p>
-                  <p className="text-lg font-bold text-gray-900">
-                    #{result.orderNumber}
+                  <p className="text-lg font-bold text-gray-900 font-mono">
+                    {result.orderNumber}
                   </p>
                 </div>
                 <span

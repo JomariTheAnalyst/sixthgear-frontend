@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, useMemo } from "react"
 import { HttpTypes } from "@medusajs/types"
 import { useCartDrawer } from "@lib/context/cart-drawer-context"
 import { useSelectedItems } from "@lib/context/selected-cart-items-context"
@@ -78,6 +78,35 @@ export default function CartDrawer({ cart }: CartDrawerProps) {
     }
   }, [isCartOpen, closeCart, variantSelector])
 
+  // Clean up stale selected items when cart changes
+  useEffect(() => {
+    if (cart?.items) {
+      const currentItemIds = new Set(cart.items.map((item) => item.id))
+      const staleIds = Array.from(selectedItems).filter(
+        (id) => !currentItemIds.has(id)
+      )
+
+      if (staleIds.length > 0) {
+        console.log(
+          "[Cart Drawer] Removing stale selected items:",
+          staleIds.length
+        )
+        // Remove stale IDs from selection
+        const validIds = Array.from(selectedItems).filter((id) =>
+          currentItemIds.has(id)
+        )
+        if (validIds.length !== selectedItems.size) {
+          // Update selection to only include valid IDs
+          if (validIds.length === 0) {
+            deselectAll()
+          } else {
+            selectAll(validIds)
+          }
+        }
+      }
+    }
+  }, [cart?.items, selectedItems, deselectAll, selectAll])
+
   // Fetch product data when variant selector opens
   useEffect(() => {
     if (variantSelector) {
@@ -101,10 +130,26 @@ export default function CartDrawer({ cart }: CartDrawerProps) {
   const total = cart?.total ?? 0
 
   // Calculate selected items total
-  const selectedTotal =
-    cart?.items
-      ?.filter((item) => selectedItems.has(item.id))
-      .reduce((sum, item) => sum + (item.subtotal || 0), 0) || 0
+  const selectedTotal = useMemo(() => {
+    if (!cart?.items) return 0
+
+    const filtered = cart.items.filter((item) => selectedItems.has(item.id))
+
+    console.log("[Cart Drawer] Calculating selected total...")
+    console.log("[Cart Drawer] Selected item IDs:", Array.from(selectedItems))
+    console.log("[Cart Drawer] Filtered items:", filtered.length)
+
+    const total = filtered.reduce((sum, item) => {
+      const itemTotal = item.subtotal || item.total || 0
+      console.log(
+        `[Cart Drawer] Item ${item.id}: subtotal=${item.subtotal}, total=${item.total}, using=${itemTotal}`
+      )
+      return sum + itemTotal
+    }, 0)
+
+    console.log("[Cart Drawer] Selected total:", total)
+    return total
+  }, [cart?.items, selectedItems])
 
   // Calculate actual selected count from cart items (not from Set size)
   const actualSelectedCount =
@@ -140,6 +185,18 @@ export default function CartDrawer({ cart }: CartDrawerProps) {
 
   const handleCheckout = (e: React.MouseEvent) => {
     e.preventDefault()
+
+    // Store selected item IDs in sessionStorage for checkout page
+    const selectedItemIds = Array.from(selectedItems)
+    sessionStorage.setItem(
+      "checkoutSelectedItems",
+      JSON.stringify(selectedItemIds)
+    )
+    console.log(
+      "[Cart Drawer] Stored selected items for checkout:",
+      selectedItemIds.length
+    )
+
     setIsRedirecting(true)
     closeCart()
     router.push("/checkout")

@@ -13,7 +13,7 @@ import { convertToLocale } from "@lib/util/money"
 import { calculatePriceForShippingOption } from "@lib/data/fulfillment"
 import BillingAddressSection from "@modules/checkout/components/billing-address-section"
 import TermsSection from "@modules/checkout/components/terms-section"
-import StripeCheckoutButton from "@modules/checkout/components/stripe-checkout-button"
+import { useRouter } from "next/navigation"
 
 interface CheckoutFormProps {
   cart: HttpTypes.StoreCart | null
@@ -60,6 +60,8 @@ export default function CheckoutForm({
   const [selectedPaymentMethod, setSelectedPaymentMethod] =
     useState<string>("cod")
   const [agreedToTerms, setAgreedToTerms] = useState(false)
+
+  const router = useRouter()
 
   // UI state
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -251,12 +253,173 @@ export default function CheckoutForm({
         })
       }
 
-      // For COD: Place order directly
+      // For COD: Create checkout cart with selected items, then complete it
       if (
         selectedPaymentMethod === "cod" ||
         selectedPaymentMethod === "cash_on_delivery"
       ) {
-        await placeOrder()
+        console.log("[Checkout] Starting COD checkout flow...")
+
+        // Get selected item IDs from sessionStorage
+        const selectedItemsJson = sessionStorage.getItem(
+          "checkoutSelectedItems"
+        )
+        const selectedItemIds = selectedItemsJson
+          ? JSON.parse(selectedItemsJson)
+          : []
+
+        console.log("[Checkout] Selected items:", {
+          count: selectedItemIds.length,
+          ids: selectedItemIds,
+        })
+
+        let checkoutCartId = cart.id
+
+        // If items are selected, create a checkout cart with only selected items
+        if (selectedItemIds.length > 0) {
+          console.log(
+            "[Checkout] Creating checkout cart with selected items only..."
+          )
+
+          const { createCheckoutCartFromSelection } = await import(
+            "@lib/data/cart"
+          )
+
+          try {
+            const { checkout_cart_id } = await createCheckoutCartFromSelection(
+              cart.id,
+              selectedItemIds
+            )
+
+            checkoutCartId = checkout_cart_id
+
+            console.log("[Checkout] ✅ Checkout cart created:", checkoutCartId)
+
+            // Set shipping method on checkout cart
+            if (selectedShippingMethod) {
+              console.log(
+                "[Checkout] Setting shipping method on checkout cart..."
+              )
+              await setShippingMethod({
+                cartId: checkoutCartId,
+                shippingMethodId: selectedShippingMethod,
+              })
+            }
+          } catch (checkoutCartError: any) {
+            console.error(
+              "[Checkout] Failed to create checkout cart:",
+              checkoutCartError
+            )
+            throw new Error("Failed to prepare checkout. Please try again.")
+          }
+        }
+
+        // Initialize payment session on checkout cart
+        console.log(
+          "[Checkout] Initializing COD payment session on checkout cart..."
+        )
+
+        try {
+          const { initiatePaymentSession } = await import("@lib/data/cart")
+
+          // Get the checkout cart
+          const { retrieveCart } = await import("@lib/data/cart")
+          const checkoutCart = await retrieveCart(checkoutCartId)
+
+          if (!checkoutCart) {
+            throw new Error("Checkout cart not found")
+          }
+
+          await initiatePaymentSession(checkoutCart, {
+            provider_id: "pp_system_default",
+          })
+
+          console.log("[Checkout] ✅ COD payment session initialized")
+
+          // Wait for backend to process
+          await new Promise((resolve) => setTimeout(resolve, 500))
+        } catch (paymentError: any) {
+          console.error(
+            "[Checkout] Failed to initialize payment:",
+            paymentError
+          )
+          throw new Error("Failed to initialize payment. Please try again.")
+        }
+
+        // Complete the checkout cart
+        console.log("[Checkout] Completing checkout cart...")
+
+        try {
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL}/store/carts/${checkoutCartId}/complete`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "x-publishable-api-key":
+                  process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY || "",
+              },
+              credentials: "include",
+            }
+          )
+
+          if (!response.ok) {
+            const errorData = await response.json()
+            throw new Error(errorData.error || "Failed to complete order")
+          }
+
+          const result = await response.json()
+
+          if (result?.type === "order") {
+            const countryCode =
+              result.order.shipping_address?.country_code?.toLowerCase() || "ph"
+
+            console.log(
+              "[Checkout] ✅ Order created successfully:",
+              result.order.id
+            )
+
+            // Clear selected items from sessionStorage
+            sessionStorage.removeItem("checkoutSelectedItems")
+
+            // If we used a checkout cart, delete the original cart items that were ordered
+            if (selectedItemIds.length > 0) {
+              console.log(
+                "[Checkout] Removing ordered items from original cart..."
+              )
+
+              try {
+                const { deleteLineItem } = await import("@lib/data/cart")
+
+                for (const itemId of selectedItemIds) {
+                  await deleteLineItem(itemId)
+                }
+
+                console.log(
+                  "[Checkout] ✅ Ordered items removed from original cart"
+                )
+              } catch (cleanupError: any) {
+                console.warn(
+                  "[Checkout] ⚠️ Failed to clean up original cart:",
+                  cleanupError
+                )
+                // Continue - order is placed successfully
+              }
+            }
+
+            // Redirect to success page
+            const successUrl = `/${countryCode}/order/confirmed?order_id=${result.order.id}`
+            console.log("[Checkout] Redirecting to:", successUrl)
+
+            window.location.href = successUrl
+            return
+          } else {
+            throw new Error("Order creation failed - no order returned")
+          }
+        } catch (orderError: any) {
+          console.error("[Checkout] Order completion failed:", orderError)
+          throw orderError
+        }
       }
 
       console.log("[Checkout] Cart updated successfully")
@@ -646,7 +809,14 @@ export default function CheckoutForm({
             )}
           </div>
 
-          {/* Payment Section - Clean Layout (Only Selected Has Outline) */}
+          {/* Billing Address Section - MOVED TO 4TH POSITION */}
+          <BillingAddressSection
+            cart={cart}
+            shippingAddress={shippingAddress}
+            onBillingAddressChange={setBillingAddress}
+          />
+
+          {/* Payment Section - MOVED TO 5TH POSITION (LAST BEFORE TERMS) */}
           <div className="space-y-4">
             <div>
               <h3 className="text-2xl font-bold text-gray-900 mb-2">Payment</h3>
@@ -753,14 +923,171 @@ export default function CheckoutForm({
                           <path d="M59.64 14.28h-8.06c.19 1.93 1.6 2.55 3.2 2.55 1.64 0 2.96-.37 4.05-.95v3.32a8.33 8.33 0 0 1-4.56 1.1c-4.01 0-6.83-2.5-6.83-7.48 0-4.19 2.39-7.52 6.3-7.52 3.92 0 5.96 3.28 5.96 7.5 0 .4-.04 1.26-.06 1.48zm-5.92-5.62c-1.03 0-2.17.73-2.17 2.58h4.25c0-1.85-1.07-2.58-2.08-2.58zM40.95 20.3c-1.44 0-2.32-.6-2.9-1.04l-.02 4.63-4.12.87V5.57h3.76l.08 1.02a4.7 4.7 0 0 1 3.23-1.29c2.9 0 5.62 2.6 5.62 7.4 0 5.23-2.7 7.6-5.65 7.6zM40 8.95c-.95 0-1.54.34-1.97.81l.02 6.12c.4.44.98.78 1.95.78 1.52 0 2.54-1.65 2.54-3.87 0-2.15-1.04-3.84-2.54-3.84zM28.24 5.57h4.13v14.44h-4.13V5.57zm0-4.7L32.37 0v3.36l-4.13.88V.88zm-4.32 9.35v9.79H19.8V5.57h3.7l.12 1.22c1-1.77 3.07-1.41 3.62-1.22v3.79c-.52-.17-2.29-.43-3.32.86zm-8.55 4.72c0 2.43 2.6 1.68 3.12 1.46v3.36c-.55.3-1.54.54-2.89.54a4.15 4.15 0 0 1-4.27-4.24l.01-13.17 4.02-.86v3.54h3.14V9.1h-3.13v5.85zm-4.91.7c0 2.97-2.31 4.66-5.73 4.66a11.2 11.2 0 0 1-4.46-.93v-3.93c1.38.75 3.1 1.31 4.46 1.31.92 0 1.53-.24 1.53-1C6.26 13.77 0 14.51 0 9.95 0 7.04 2.28 5.3 5.62 5.3c1.36 0 2.72.2 4.09.75v3.88a9.23 9.23 0 0 0-4.1-1.06c-.86 0-1.44.25-1.44.9 0 1.85 6.29.97 6.29 5.88z" />
                         </svg>
                       </div>
-                      {/* Dropdown Note - Only shows when selected */}
+                      {/* Accordion Dropdown - Redirect to Stripe Checkout */}
                       {checked && (
                         <div className="px-4 pb-4 animate-in slide-in-from-top-2 duration-300 ease-out">
-                          <div className="p-4 bg-white rounded-md border border-gray-200">
+                          <div className="p-4 bg-white rounded-md border border-gray-200 space-y-4">
                             <p className="text-sm text-gray-700 leading-relaxed">
-                              You'll be redirected to Stripe to complete your
-                              purchase securely using Cards, Bank Transfer
+                              You'll be redirected to Stripe's secure payment
+                              page to complete your purchase.
                             </p>
+
+                            {/* Pay Now Button - Redirects to Stripe Checkout */}
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                if (!agreedToTerms || !isFormValid) {
+                                  setErrors((prev) => ({
+                                    ...prev,
+                                    submit:
+                                      "Please complete all required fields and agree to terms",
+                                  }))
+                                  return
+                                }
+
+                                setIsSubmitting(true)
+
+                                try {
+                                  // Update cart with final details
+                                  if (email !== cart.email) {
+                                    await updateCart({ email })
+                                  }
+
+                                  await updateCart({
+                                    shipping_address: shippingAddress,
+                                    billing_address:
+                                      billingAddress || shippingAddress,
+                                  })
+
+                                  if (selectedShippingMethod) {
+                                    await setShippingMethod({
+                                      cartId: cart.id,
+                                      shippingMethodId: selectedShippingMethod,
+                                    })
+                                  }
+
+                                  // Get selected item IDs
+                                  const selectedItemsJson =
+                                    sessionStorage.getItem(
+                                      "checkoutSelectedItems"
+                                    )
+                                  const selectedItemIds = selectedItemsJson
+                                    ? JSON.parse(selectedItemsJson)
+                                    : []
+
+                                  let checkoutCartId = cart.id
+
+                                  // If items are selected, create checkout cart
+                                  if (selectedItemIds.length > 0) {
+                                    console.log(
+                                      "[Stripe] Creating checkout cart with selected items..."
+                                    )
+
+                                    const { createCheckoutCartFromSelection } =
+                                      await import("@lib/data/cart")
+
+                                    try {
+                                      const { checkout_cart_id } =
+                                        await createCheckoutCartFromSelection(
+                                          cart.id,
+                                          selectedItemIds
+                                        )
+
+                                      checkoutCartId = checkout_cart_id
+
+                                      console.log(
+                                        "[Stripe] ✅ Checkout cart created:",
+                                        checkoutCartId
+                                      )
+
+                                      // Set shipping method on checkout cart
+                                      if (selectedShippingMethod) {
+                                        await setShippingMethod({
+                                          cartId: checkoutCartId,
+                                          shippingMethodId:
+                                            selectedShippingMethod,
+                                        })
+                                      }
+                                    } catch (checkoutCartError: any) {
+                                      console.error(
+                                        "[Stripe] Failed to create checkout cart:",
+                                        checkoutCartError
+                                      )
+                                      throw new Error(
+                                        "Failed to prepare checkout. Please try again."
+                                      )
+                                    }
+                                  }
+
+                                  // Create Stripe Checkout Session with checkout cart
+                                  const response = await fetch(
+                                    `${process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL}/store/checkout-sessions`,
+                                    {
+                                      method: "POST",
+                                      headers: {
+                                        "Content-Type": "application/json",
+                                        "x-publishable-api-key":
+                                          process.env
+                                            .NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY ||
+                                          "",
+                                      },
+                                      body: JSON.stringify({
+                                        cart_id: checkoutCartId,
+                                      }),
+                                    }
+                                  )
+
+                                  if (!response.ok) {
+                                    const errorData = await response.json()
+                                    throw new Error(
+                                      errorData.error ||
+                                        "Failed to create checkout session"
+                                    )
+                                  }
+
+                                  const { checkout_url } = await response.json()
+
+                                  if (!checkout_url) {
+                                    throw new Error("No checkout URL received")
+                                  }
+
+                                  // Store original cart ID if using checkout cart
+                                  if (selectedItemIds.length > 0) {
+                                    sessionStorage.setItem(
+                                      "originalCartId",
+                                      cart.id
+                                    )
+                                    sessionStorage.setItem(
+                                      "orderedItemIds",
+                                      JSON.stringify(selectedItemIds)
+                                    )
+                                  }
+
+                                  // Redirect to Stripe Checkout
+                                  window.location.href = checkout_url
+                                } catch (error: any) {
+                                  console.error(
+                                    "[Stripe Checkout] Error:",
+                                    error
+                                  )
+                                  setErrors((prev) => ({
+                                    ...prev,
+                                    submit:
+                                      error.message ||
+                                      "Failed to start checkout",
+                                  }))
+                                  setIsSubmitting(false)
+                                }
+                              }}
+                              disabled={
+                                !agreedToTerms || !isFormValid || isSubmitting
+                              }
+                              className="w-full h-14 bg-gray-900 hover:bg-gray-800 text-white font-bold text-base uppercase tracking-wider rounded-lg transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                            >
+                              {isSubmitting
+                                ? "Redirecting to Stripe..."
+                                : "Pay with Stripe"}
+                            </button>
                           </div>
                         </div>
                       )}
@@ -775,13 +1102,6 @@ export default function CheckoutForm({
             )}
           </div>
 
-          {/* Billing Address Section */}
-          <BillingAddressSection
-            cart={cart}
-            shippingAddress={shippingAddress}
-            onBillingAddressChange={setBillingAddress}
-          />
-
           {/* Terms & Conditions */}
           <TermsSection
             agreed={agreedToTerms}
@@ -795,23 +1115,8 @@ export default function CheckoutForm({
             </div>
           )}
 
-          {/* Pay Now Button - Black Background, White Text, No Icons */}
-          {isStripeSelected ? (
-            <div className="space-y-4">
-              {agreedToTerms && isFormValid ? (
-                <StripeCheckoutButton cart={cart} />
-              ) : (
-                <button
-                  disabled
-                  className="w-full h-14 bg-gray-300 text-gray-500 font-bold text-base uppercase tracking-wider rounded-lg cursor-not-allowed flex items-center justify-center"
-                >
-                  {!agreedToTerms
-                    ? "Agree to Terms to Continue"
-                    : "Complete All Fields"}
-                </button>
-              )}
-            </div>
-          ) : (
+          {/* Pay Now Button - Only for COD (Stripe has its own button in accordion) */}
+          {!isStripeSelected && (
             <button
               onClick={handleSubmit}
               disabled={!agreedToTerms || !isFormValid || isSubmitting}
