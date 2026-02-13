@@ -35,8 +35,7 @@ export default function MaintenancePage() {
           </h1>
           <p className="text-base text-gray-600 leading-relaxed">
             We're currently performing scheduled maintenance to improve your
-            experience. This should only take a few hours. We appreciate your
-            patience.
+            experience. We appreciate your patience and understanding.
           </p>
         </div>
 
@@ -48,17 +47,10 @@ export default function MaintenancePage() {
           <p className="text-sm text-gray-500">Need immediate assistance?</p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <a
-              href="mailto:support@sixthgearmoto.com"
+              href="https://www.facebook.com/camille.sixthgear"
               className="text-sm text-gray-700 hover:text-[#F16D34] underline underline-offset-4 transition-colors"
             >
-              support@sixthgearmoto.com
-            </a>
-            <span className="hidden sm:inline text-gray-300">|</span>
-            <a
-              href="tel:+639123456789"
-              className="text-sm text-gray-700 hover:text-[#F16D34] underline underline-offset-4 transition-colors"
-            >
-              +63 912 345 6789
+              message us
             </a>
           </div>
         </div>
@@ -66,7 +58,7 @@ export default function MaintenancePage() {
         {/* Footer */}
         <div className="mt-12 text-center">
           <p className="text-xs text-gray-400">
-            SixthGear — Premium Motorcycle Parts & Accessories
+            SixthGear MotoSupply and cafe + lounge
           </p>
         </div>
       </div>
