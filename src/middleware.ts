@@ -5,6 +5,10 @@ const BACKEND_URL = process.env.MEDUSA_BACKEND_URL
 const PUBLISHABLE_API_KEY = process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
 const DEFAULT_REGION = process.env.NEXT_PUBLIC_DEFAULT_REGION || "ph"
 
+// Maintenance mode - only active in production (Vercel)
+const MAINTENANCE_MODE = process.env.MAINTENANCE_MODE === "true"
+const IS_PRODUCTION = process.env.VERCEL_ENV === "production"
+
 const regionMapCache = {
   regionMap: new Map<string, HttpTypes.StoreRegion>(),
   regionMapUpdated: Date.now(),
@@ -126,12 +130,43 @@ async function getCountryCode(
 }
 
 /**
- * Fail-safe middleware for region-based routing.
+ * Fail-safe middleware for region-based routing and maintenance mode.
  * NEVER throws - always returns a valid response.
  */
 export async function middleware(request: NextRequest) {
   try {
     const pathname = request.nextUrl.pathname
+
+    // MAINTENANCE MODE CHECK (Production only)
+    // Skip maintenance check for:
+    // - /[countryCode]/maintenance page itself (prevent loop)
+    // - Static assets (_next/*, favicon, etc.)
+    // - API routes (optional - keep APIs accessible)
+    if (
+      MAINTENANCE_MODE &&
+      IS_PRODUCTION &&
+      !pathname.includes("/maintenance") &&
+      !pathname.startsWith("/_next/") &&
+      !pathname.startsWith("/api/") &&
+      !pathname.match(/\.(ico|png|jpg|jpeg|svg|gif|webp|css|js|json|xml|txt)$/)
+    ) {
+      console.log(
+        "[Middleware] Maintenance mode active, redirecting to maintenance"
+      )
+
+      // Get country code from URL or use default
+      const urlSegments = pathname.split("/").filter(Boolean)
+      const countryCode =
+        urlSegments[0]?.length === 2 ? urlSegments[0] : DEFAULT_REGION
+
+      const maintenanceUrl = new URL(`/${countryCode}/maintenance`, request.url)
+      const response = NextResponse.rewrite(maintenanceUrl)
+
+      // Set 503 Service Unavailable status
+      response.headers.set("Retry-After", "3600") // Retry after 1 hour
+
+      return response
+    }
 
     // CRITICAL: Skip middleware for preview routes with country codes
     // Allow /ph/preview, /us/preview, /sg/preview, /my/preview
