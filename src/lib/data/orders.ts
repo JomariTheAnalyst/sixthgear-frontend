@@ -11,8 +11,36 @@ export const retrieveOrder = async (id: string) => {
   }
 
   try {
+    // Use Medusa v2 field syntax with + prefix for relations
+    const fields = [
+      "id",
+      "display_id",
+      "email",
+      "currency_code",
+      "created_at",
+      "subtotal",
+      "shipping_total",
+      "tax_total",
+      "discount_total",
+      "total",
+      "payment_status",
+      "fulfillment_status",
+      "+items",
+      "+items.variant",
+      "+items.product",
+      "+shipping_address",
+      "+billing_address",
+      "+shipping_methods",
+      "+payment_collections",
+      "+payment_collections.payment_sessions",
+      "+payment_collections.payments",
+    ].join(",")
+
+    console.log("[retrieveOrder] Fetching order:", id)
+    console.log("[retrieveOrder] Fields:", fields)
+
     const response = await sdk.client.fetch<HttpTypes.StoreOrderResponse>(
-      `/store/orders/${id}?fields=*fulfillments,*fulfillments.labels,*items,*items.variant,*items.product,*shipping_address,*billing_address,*shipping_methods`,
+      `/store/orders/${id}?fields=${fields}`,
       {
         method: "GET",
         headers,
@@ -20,9 +48,16 @@ export const retrieveOrder = async (id: string) => {
       }
     )
 
+    console.log("[retrieveOrder] Response:", response)
+    console.log("[retrieveOrder] Order items:", response.order?.items)
+    console.log(
+      "[retrieveOrder] Items count:",
+      response.order?.items?.length || 0
+    )
+
     return response.order
   } catch (err) {
-    console.error("Error retrieving order:", err)
+    console.error("[retrieveOrder] Error:", err)
     throw err
   }
 }

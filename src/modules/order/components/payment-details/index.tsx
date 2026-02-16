@@ -8,13 +8,22 @@ type PaymentDetailsProps = {
 
 const PaymentDetails = ({ order }: PaymentDetailsProps) => {
   const payment = order.payment_collections?.[0]?.payments?.[0]
-  const providerId = payment?.provider_id || (order as any).payment_provider_id
+  const paymentSession = order.payment_collections?.[0]?.payment_sessions?.[0]
+  const providerId =
+    payment?.provider_id ||
+    paymentSession?.provider_id ||
+    (order as any).payment_provider_id
+
+  // Determine if COD - check for pp_system_default, manual, or cod
+  const isCOD =
+    providerId === "pp_system_default" ||
+    providerId === "manual" ||
+    providerId === "cod"
 
   // Determine display title
-  const paymentTitle =
-    providerId === "manual" || providerId === "cod"
-      ? "Cash on Delivery"
-      : paymentInfoMap[providerId]?.title || providerId
+  const paymentTitle = isCOD
+    ? "Cash on Delivery (COD)"
+    : paymentInfoMap[providerId]?.title || providerId
 
   return (
     <div>
@@ -49,7 +58,7 @@ const PaymentDetails = ({ order }: PaymentDetailsProps) => {
             </p>
           </div>
           <div className="pl-10 flex items-center gap-3">
-            {paymentInfoMap[providerId]?.icon && (
+            {!isCOD && paymentInfoMap[providerId]?.icon && (
               <div className="flex items-center justify-center p-2 w-10 h-10 rounded-lg bg-gray-50 border border-gray-200">
                 {paymentInfoMap[providerId].icon}
               </div>
@@ -94,7 +103,7 @@ const PaymentDetails = ({ order }: PaymentDetailsProps) => {
         </div>
 
         {/* COD Notice */}
-        {providerId === "manual" && (
+        {isCOD && (
           <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl">
             <div className="flex gap-3">
               <div className="flex-shrink-0">
@@ -117,7 +126,14 @@ const PaymentDetails = ({ order }: PaymentDetailsProps) => {
                   Cash on Delivery
                 </p>
                 <p className="text-sm text-amber-800">
-                  Please prepare the exact amount for the courier upon delivery.
+                  Please prepare the exact amount of{" "}
+                  <span className="font-bold">
+                    {convertToLocale({
+                      amount: order.total,
+                      currency_code: order.currency_code,
+                    })}
+                  </span>{" "}
+                  for the courier upon delivery.
                 </p>
               </div>
             </div>

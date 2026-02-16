@@ -1,23 +1,30 @@
-import { retrieveOrder } from "@lib/data/orders"
-import OrderCompletedTemplate from "@modules/order/templates/order-completed-template"
 import { Metadata } from "next"
-import { notFound } from "next/navigation"
+import OrderConfirmedClient from "@modules/order/templates/order-confirmed-client"
+import CartRefresh from "@modules/order/components/cart-refresh"
 
 type Props = {
-  params: Promise<{ id: string }>
+  params: Promise<{ id: string; countryCode: string }>
 }
+
 export const metadata: Metadata = {
   title: "Order Confirmed",
-  description: "You purchase was successful",
+  description: "Your purchase was successful",
 }
+
+// Force dynamic rendering - no caching
+export const dynamic = "force-dynamic"
+export const revalidate = 0
 
 export default async function OrderConfirmedPage(props: Props) {
   const params = await props.params
-  const order = await retrieveOrder(params.id).catch(() => null)
 
-  if (!order) {
-    return notFound()
-  }
-
-  return <OrderCompletedTemplate order={order} />
+  return (
+    <>
+      <CartRefresh />
+      <OrderConfirmedClient
+        orderId={params.id}
+        countryCode={params.countryCode}
+      />
+    </>
+  )
 }

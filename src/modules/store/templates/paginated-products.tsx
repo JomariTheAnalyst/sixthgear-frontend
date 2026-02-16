@@ -1,9 +1,11 @@
-import { listProductsWithSort } from "@lib/data/products"
+import { listProductsWithSort, getProductsInventory } from "@lib/data/products"
 import { getRegion } from "@lib/data/regions"
 import { getProductsByTagValue } from "@lib/data/tags"
 import ProductCard from "@modules/home/components/product-sections/product-card"
 import { Pagination } from "@modules/store/components/pagination"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
+import SearchResults from "./search-results"
+import FilteredProducts from "./filtered-products"
 
 const PRODUCT_LIMIT = 12
 
@@ -23,6 +25,8 @@ export default async function PaginatedProducts({
   productsIds,
   countryCode,
   tagValue,
+  searchQuery,
+  hasFilters,
 }: {
   sortBy?: SortOptions
   page: number
@@ -31,11 +35,25 @@ export default async function PaginatedProducts({
   productsIds?: string[]
   countryCode: string
   tagValue?: string
+  searchQuery?: string
+  hasFilters?: boolean
 }) {
   const region = await getRegion(countryCode)
 
   if (!region) {
     return null
+  }
+
+  // If there's a search query, use Meilisearch
+  if (searchQuery) {
+    return (
+      <SearchResults searchQuery={searchQuery} page={page} region={region} />
+    )
+  }
+
+  // If there are active Meilisearch filters (categories, tags, price), use FilteredProducts
+  if (hasFilters) {
+    return <FilteredProducts page={page} region={region} />
   }
 
   // If filtering by tag, use the tag-based query
@@ -78,17 +96,29 @@ export default async function PaginatedProducts({
     )
     const totalPages = Math.ceil(products.length / PRODUCT_LIMIT)
 
+    // Fetch inventory for all products
+    const productIds = paginatedProducts.map((p) => p.id)
+    const inventoryByProduct = await getProductsInventory(productIds)
+
     return (
       <>
         <ul
-          className="grid grid-cols-2 lg:grid-cols-4 gap-6 w-full"
+          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 w-full"
           data-testid="products-list"
         >
-          {paginatedProducts.map((p) => (
-            <li key={p.id}>
-              <ProductCard product={p} region={region} />
-            </li>
-          ))}
+          {paginatedProducts.map((p) => {
+            // Flatten inventory for this product
+            const productInventory = inventoryByProduct[p.id] || {}
+            return (
+              <li key={p.id}>
+                <ProductCard
+                  product={p}
+                  region={region}
+                  inventoryMap={productInventory}
+                />
+              </li>
+            )
+          })}
         </ul>
         {totalPages > 1 && (
           <Pagination
@@ -161,17 +191,29 @@ export default async function PaginatedProducts({
     )
   }
 
+  // Fetch inventory for all products
+  const productIds = products.map((p) => p.id)
+  const inventoryByProduct = await getProductsInventory(productIds)
+
   return (
     <>
       <ul
-        className="grid grid-cols-2 lg:grid-cols-4 gap-6 w-full"
+        className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 w-full"
         data-testid="products-list"
       >
-        {products.map((p) => (
-          <li key={p.id}>
-            <ProductCard product={p} region={region} />
-          </li>
-        ))}
+        {products.map((p) => {
+          // Flatten inventory for this product
+          const productInventory = inventoryByProduct[p.id] || {}
+          return (
+            <li key={p.id}>
+              <ProductCard
+                product={p}
+                region={region}
+                inventoryMap={productInventory}
+              />
+            </li>
+          )
+        })}
       </ul>
       {totalPages > 1 && (
         <Pagination

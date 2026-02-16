@@ -13,6 +13,7 @@ type ColorSwatchProps = {
   updateOption: (optionId: string, value: string) => void
   currentSelections: Record<string, string | undefined>
   disabled?: boolean
+  inventoryMap?: Record<string, number>
 }
 
 export default function ColorSwatch({
@@ -22,6 +23,7 @@ export default function ColorSwatch({
   updateOption,
   currentSelections,
   disabled,
+  inventoryMap,
 }: ColorSwatchProps) {
   const colorValues = (option.values ?? []).map((v) => v.value)
 
@@ -45,7 +47,8 @@ export default function ColorSwatch({
             variants,
             option.id,
             colorValue,
-            currentSelections
+            currentSelections,
+            inventoryMap
           )
 
           // Determine if color is light (for border/check visibility)

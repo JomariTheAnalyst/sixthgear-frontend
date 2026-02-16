@@ -9,6 +9,7 @@ import CartDropdown from "@modules/layout/components/cart-dropdown"
 import MobileMenu from "./mobile-menu"
 import Link from "next/link"
 import SearchBar from "@modules/layout/components/search-bar"
+import MobileSearchButton from "@modules/search/components/mobile-search-button"
 import Logo from "@modules/layout/components/brand-logo"
 import ServicesDropdown from "@modules/layout/components/services-dropdown"
 import { ServiceCategory } from "@lib/services-data"
@@ -109,22 +110,7 @@ const NavClient = ({
                     navLinks={navLinks}
                     servicesData={servicesData}
                   />
-                  <button className="p-2 text-gray-900 hover:text-[#F16D34] transition-colors">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth={1.5}
-                      stroke="currentColor"
-                      className="w-5 h-5"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
-                      />
-                    </svg>
-                  </button>
+                  <MobileSearchButton />
                 </div>
                 {/* Desktop: Search Bar */}
                 <div className="hidden md:block flex-1">

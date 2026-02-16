@@ -5,7 +5,7 @@ import { HttpTypes } from "@medusajs/types"
 
 // Minimal fields for tag-based product listing
 const TAG_LISTING_FIELDS =
-  "id,title,handle,thumbnail,*variants.calculated_price,+variants.inventory_quantity,*tags"
+  "id,title,handle,thumbnail,*variants.calculated_price,+variants.inventory_quantity,*tags,*collection,+metadata"
 
 /**
  * Get products by tag value with calculated pricing

@@ -20,6 +20,7 @@ type ProductActionsProps = {
   product: HttpTypes.StoreProduct
   region: HttpTypes.StoreRegion
   disabled?: boolean
+  inventoryMap?: Record<string, number> // variant_id -> quantity
 }
 
 const optionsAsKeymap = (
@@ -34,6 +35,7 @@ const optionsAsKeymap = (
 export default function ProductActions({
   product,
   disabled,
+  inventoryMap,
 }: ProductActionsProps) {
   const router = useRouter()
   const pathname = usePathname()
@@ -98,23 +100,55 @@ export default function ProductActions({
 
   // check if the selected variant is in stock
   const inStock = useMemo(() => {
-    if (selectedVariant && !selectedVariant.manage_inventory) {
+    // If no variant selected, check if ANY variant has stock
+    if (!selectedVariant) {
+      // Check if any variant has stock
+      if (inventoryMap && Object.keys(inventoryMap).length > 0) {
+        return Object.values(inventoryMap).some((qty) => qty > 0)
+      }
+
+      // Fallback: check if any variant has stock from variant data
+      return (
+        product.variants?.some((v) => {
+          if (v.allow_backorder) return true
+          if (!v.manage_inventory) return true
+          if (
+            v.inventory_quantity !== null &&
+            v.inventory_quantity !== undefined
+          ) {
+            return v.inventory_quantity > 0
+          }
+          return false
+        }) ?? false
+      )
+    }
+
+    // If we have inventory data from our custom endpoint, use it
+    if (inventoryMap && selectedVariant.id in inventoryMap) {
+      const quantity = inventoryMap[selectedVariant.id]
+      return quantity > 0
+    }
+
+    // Fallback to variant properties
+    if (selectedVariant.allow_backorder) {
       return true
     }
 
-    if (selectedVariant?.allow_backorder) {
+    if (!selectedVariant.manage_inventory) {
       return true
     }
 
+    // Check API inventory_quantity (may be null in Medusa v2)
     if (
-      selectedVariant?.manage_inventory &&
-      (selectedVariant?.inventory_quantity || 0) > 0
+      selectedVariant.inventory_quantity !== null &&
+      selectedVariant.inventory_quantity !== undefined
     ) {
-      return true
+      return selectedVariant.inventory_quantity > 0
     }
 
+    // Default: if manage_inventory is true but no quantity data, assume out of stock
     return false
-  }, [selectedVariant])
+  }, [selectedVariant, inventoryMap, product.variants])
 
   const actionsRef = useRef<HTMLDivElement>(null)
   const inView = useIntersection(actionsRef, "0px")
@@ -153,7 +187,11 @@ export default function ProductActions({
   }
 
   const increaseQuantity = () => {
-    const maxQty = selectedVariant?.inventory_quantity || 99
+    // Use inventory map if available, otherwise fall back to variant data
+    const maxQty =
+      inventoryMap && selectedVariant?.id
+        ? inventoryMap[selectedVariant.id] || 99
+        : selectedVariant?.inventory_quantity || 99
     if (quantity < maxQty) setQuantity(quantity + 1)
   }
 
@@ -166,6 +204,7 @@ export default function ProductActions({
       updateOption: setOptionValue,
       currentSelections: options,
       disabled: disabled || isAdding,
+      inventoryMap, // Pass inventory map to selectors
     }
 
     if (isColorOption(option)) {
@@ -182,8 +221,10 @@ export default function ProductActions({
   return (
     <>
       <div className="flex flex-col gap-y-6" ref={actionsRef}>
-        {/* Price Section */}
-        <ProductPrice product={product} variant={selectedVariant} />
+        {/* Price Section - Above Variants */}
+        <div className="pb-6 border-b border-gray-200">
+          <ProductPrice product={product} variant={selectedVariant} />
+        </div>
 
         {/* Variant Options */}
         {(product.variants?.length ?? 0) > 1 && (
@@ -205,13 +246,13 @@ export default function ProductActions({
         )}
 
         {/* Quantity & Add to Cart Row */}
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex items-center gap-2">
           {/* Quantity Selector */}
-          <div className="flex items-center border border-gray-300">
+          <div className="flex items-center border border-gray-300 flex-shrink-0">
             <button
               onClick={decreaseQuantity}
               disabled={quantity <= 1 || disabled || isAdding}
-              className="w-12 h-12 flex items-center justify-center text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-50"
+              className="w-10 h-12 flex items-center justify-center text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-50"
               aria-label="Decrease quantity"
             >
               <svg
@@ -228,13 +269,13 @@ export default function ProductActions({
                 />
               </svg>
             </button>
-            <span className="w-12 h-12 flex items-center justify-center text-sm font-semibold text-gray-900 border-x border-gray-300">
+            <span className="w-10 h-12 flex items-center justify-center text-sm font-semibold text-gray-900 border-x border-gray-300">
               {quantity}
             </span>
             <button
               onClick={increaseQuantity}
               disabled={disabled || isAdding}
-              className="w-12 h-12 flex items-center justify-center text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-50"
+              className="w-10 h-12 flex items-center justify-center text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-50"
               aria-label="Increase quantity"
             >
               <svg
@@ -264,11 +305,13 @@ export default function ProductActions({
               !isValidVariant
             }
             className={`
-              flex-1 h-12 px-8 text-sm font-bold uppercase tracking-wider transition-all duration-200
+              flex-1 h-12 px-4 text-sm font-bold uppercase tracking-wider transition-all duration-200
               flex items-center justify-center gap-2
               ${
-                !inStock || !selectedVariant || !isValidVariant
+                !inStock
                   ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  : !selectedVariant || !isValidVariant
+                  ? "bg-gray-900 text-white hover:bg-[#F16D34] cursor-pointer"
                   : "bg-gray-900 text-white hover:bg-[#F16D34]"
               }
             `}
@@ -291,30 +334,49 @@ export default function ProductActions({
                   d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                 />
               </svg>
+            ) : !inStock ? (
+              <>
+                <span className="hidden lg:inline">Out of stock</span>
+                <span className="lg:hidden">Out</span>
+              </>
             ) : (
               <>
-                {!selectedVariant && !options
-                  ? "Select variant"
-                  : !inStock || !isValidVariant
-                  ? "Out of stock"
-                  : "Add to Cart"}
-                {inStock && selectedVariant && isValidVariant && (
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M17 8l4 4m0 0l-4 4m4-4H3"
-                    />
-                  </svg>
-                )}
+                <span className="hidden lg:inline">Add to Cart</span>
+                <svg
+                  className="w-5 h-5 lg:w-4 lg:h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+                  />
+                </svg>
               </>
             )}
+          </button>
+
+          {/* Wishlist Button */}
+          <button
+            className="w-12 h-12 flex items-center justify-center border border-gray-300 hover:border-[#F16D34] hover:bg-[#F16D34] hover:text-white transition-colors group flex-shrink-0"
+            aria-label="Add to wishlist"
+          >
+            <svg
+              className="w-6 h-6 text-gray-600 group-hover:text-white transition-colors"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+              />
+            </svg>
           </button>
         </div>
 

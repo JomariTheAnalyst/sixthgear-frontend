@@ -10,6 +10,7 @@ type SizeSelectorProps = {
   updateOption: (optionId: string, value: string) => void
   currentSelections: Record<string, string | undefined>
   disabled?: boolean
+  inventoryMap?: Record<string, number>
 }
 
 export default function SizeSelector({
@@ -19,6 +20,7 @@ export default function SizeSelector({
   updateOption,
   currentSelections,
   disabled,
+  inventoryMap,
 }: SizeSelectorProps) {
   const sizeValues = (option.values ?? []).map((v) => v.value)
 
@@ -41,7 +43,8 @@ export default function SizeSelector({
             variants,
             option.id,
             sizeValue,
-            currentSelections
+            currentSelections,
+            inventoryMap
           )
 
           return (

@@ -1,8 +1,10 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
+import { Suspense } from "react"
 import { listProducts } from "@lib/data/products"
 import { getRegion, listRegions } from "@lib/data/regions"
 import ProductTemplate from "@modules/products/templates"
+import SkeletonProductDetail from "@modules/skeletons/templates/skeleton-product-detail"
 import { HttpTypes } from "@medusajs/types"
 
 type Props = {
@@ -121,11 +123,13 @@ export default async function ProductPage(props: Props) {
   }
 
   return (
-    <ProductTemplate
-      product={pricedProduct}
-      region={region}
-      countryCode={params.countryCode}
-      images={images || []}
-    />
+    <Suspense fallback={<SkeletonProductDetail />}>
+      <ProductTemplate
+        product={pricedProduct}
+        region={region}
+        countryCode={params.countryCode}
+        images={images || []}
+      />
+    </Suspense>
   )
 }

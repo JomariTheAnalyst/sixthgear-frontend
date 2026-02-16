@@ -19,6 +19,26 @@ export default async function OrderCompletedTemplate({
   const cookies = await nextCookies()
   const isOnboarding = cookies.get("_medusa_onboarding")?.value === "true"
 
+  // Debug logging
+  console.log("=== ORDER COMPLETED TEMPLATE DEBUG ===")
+  console.log("Order ID:", order.id)
+  console.log("Display ID:", order.display_id)
+  console.log("Items count:", order.items?.length || 0)
+  console.log("Items:", JSON.stringify(order.items, null, 2))
+  console.log("Total:", order.total)
+  console.log("Subtotal:", order.subtotal)
+  console.log("Item Subtotal:", order.item_subtotal)
+  console.log("Shipping Total:", order.shipping_total)
+  console.log("Shipping Subtotal:", order.shipping_subtotal)
+  console.log("Payment Collections:", order.payment_collections?.length || 0)
+  if (order.payment_collections && order.payment_collections.length > 0) {
+    console.log(
+      "Payment Collection 0:",
+      JSON.stringify(order.payment_collections[0], null, 2)
+    )
+  }
+  console.log("Full Order Object:", JSON.stringify(order, null, 2))
+
   return (
     <div className="bg-gradient-to-b from-gray-50 to-white min-h-screen">
       {/* Hero Section with Success Message */}

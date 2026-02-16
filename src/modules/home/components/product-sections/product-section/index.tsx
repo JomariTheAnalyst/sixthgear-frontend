@@ -4,6 +4,7 @@
  */
 
 import { HttpTypes } from "@medusajs/types"
+import { getProductsInventory } from "@lib/data/products"
 import ProductCard, { BadgeMode } from "../product-card"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
@@ -16,7 +17,7 @@ interface ProductSectionProps {
   maxItems?: number
 }
 
-export default function ProductSection({
+export default async function ProductSection({
   title,
   products,
   region,
@@ -30,6 +31,10 @@ export default function ProductSection({
 
   // Limit to maxItems
   const displayProducts = products.slice(0, maxItems)
+
+  // Fetch inventory for all products
+  const productIds = displayProducts.map((p) => p.id)
+  const inventoryByProduct = await getProductsInventory(productIds)
 
   return (
     <section className="py-10 md:py-12 lg:py-16 bg-white">
@@ -89,6 +94,7 @@ export default function ProductSection({
                   product={product}
                   region={region}
                   badgeMode={badgeMode}
+                  inventoryMap={inventoryByProduct[product.id]}
                 />
               </div>
             ))}
@@ -135,6 +141,7 @@ export default function ProductSection({
               product={product}
               region={region}
               badgeMode={badgeMode}
+              inventoryMap={inventoryByProduct[product.id]}
             />
           ))}
         </div>

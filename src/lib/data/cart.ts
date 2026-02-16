@@ -424,12 +424,43 @@ export async function initiatePaymentSession(
     ...(await getAuthHeaders()),
   }
 
+  const waitForPaymentCollection = async (
+    cartId: string,
+    maxAttempts: number = 8
+  ): Promise<HttpTypes.StoreCart | null> => {
+    let delayMs = 150
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      const freshCart = await sdk.client
+        .fetch<HttpTypes.StoreCartResponse>(`/store/carts/${cartId}`, {
+          method: "GET",
+          query: {
+            fields: "id,*payment_collection.payment_sessions",
+          },
+          headers,
+          cache: "no-store",
+        })
+        .then(({ cart }) => cart)
+        .catch(() => null)
+
+      if (freshCart?.payment_collection?.id) {
+        return freshCart
+      }
+
+      if (attempt < maxAttempts) {
+        await new Promise((resolve) => setTimeout(resolve, delayMs))
+        delayMs = Math.min(Math.floor(delayMs * 1.6), 1000)
+      }
+    }
+
+    return null
+  }
+
   // Check if cart has payment collection
   if (!cart.payment_collection) {
     console.log("[Cart] No payment collection found, creating one...")
 
     try {
-      // Create payment collection first
       const paymentCollectionResponse = await sdk.client.fetch(
         `/store/payment-collections`,
         {
@@ -445,30 +476,23 @@ export async function initiatePaymentSession(
       )
 
       console.log(
-        "[Cart] ✅ Payment collection created:",
+        "[Cart] Payment collection created:",
         paymentCollectionResponse
       )
 
-      // Revalidate cart cache to get updated cart with payment collection
       const cartCacheTag = await getCacheTag("carts")
       revalidateTag(cartCacheTag)
 
-      // Longer delay to ensure backend has fully processed
-      console.log("[Cart] Waiting for backend to process payment collection...")
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-
-      // Fetch updated cart
-      const updatedCart = await retrieveCart(cart.id)
-      if (updatedCart?.payment_collection) {
-        cart = updatedCart
-        console.log("[Cart] ✅ Cart updated with payment collection")
-      } else {
-        console.warn(
-          "[Cart] ⚠️ Payment collection not found in updated cart, but continuing..."
-        )
+      // Poll until visible instead of using a fixed sleep.
+      const updatedCart = await waitForPaymentCollection(cart.id)
+      if (!updatedCart?.payment_collection) {
+        throw new Error("Payment collection not available yet")
       }
+
+      cart = updatedCart
+      console.log("[Cart] Cart updated with payment collection")
     } catch (error: any) {
-      console.error("[Cart] ❌ Failed to create payment collection:", error)
+      console.error("[Cart] Failed to create payment collection:", error)
       throw new Error(
         "Failed to create payment collection. Please ensure shipping method is selected."
       )
@@ -671,7 +695,9 @@ export async function placeOrder(cartId?: string, selectedItemIds?: string[]) {
         revalidateTag(orderCacheTag)
 
         removeCartId()
-        redirect(`/${countryCode}/order/${cartRes?.order.id}/confirmed`)
+        redirect(
+          `/${countryCode}/order/confirmed?order_id=${cartRes?.order.id}`
+        )
       }
 
       return cartRes.cart
@@ -694,7 +720,7 @@ export async function placeOrder(cartId?: string, selectedItemIds?: string[]) {
       revalidateTag(orderCacheTag)
 
       removeCartId()
-      redirect(`/${countryCode}/order/${cartRes?.order.id}/confirmed`)
+      redirect(`/${countryCode}/order/confirmed?order_id=${cartRes?.order.id}`)
     }
 
     return cartRes.cart

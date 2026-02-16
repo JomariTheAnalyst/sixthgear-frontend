@@ -22,3 +22,17 @@ export type StoreFreeShippingPrice = StorePrice & {
   target_remaining: number
   remaining_percentage: number
 }
+
+export type ProductReview = {
+  id: string
+  title: string
+  content: string
+  rating: number
+  first_name?: string
+  last_name?: string
+  status: "pending" | "approved" | "rejected"
+  product_id: string
+  customer_id?: string
+  created_at: string
+  updated_at: string
+}

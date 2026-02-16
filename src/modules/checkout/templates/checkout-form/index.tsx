@@ -219,6 +219,36 @@ export default function CheckoutForm({
 
   // Handle form submission
   const handleSubmit = async () => {
+    const cleanupOriginalCartInBackground = (
+      cartId: string,
+      lineItemIds: string[]
+    ) => {
+      if (!lineItemIds.length) {
+        return
+      }
+
+      const backendUrl = process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL
+      const publishableKey = process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
+
+      if (!backendUrl || !publishableKey) {
+        return
+      }
+
+      // Fire-and-forget cleanup so user redirect is not blocked.
+      lineItemIds.forEach((lineItemId) => {
+        fetch(`${backendUrl}/store/carts/${cartId}/line-items/${lineItemId}`, {
+          method: "DELETE",
+          credentials: "include",
+          keepalive: true,
+          headers: {
+            "x-publishable-api-key": publishableKey,
+          },
+        }).catch((err) => {
+          console.warn("[Checkout] Background cleanup failed:", err)
+        })
+      })
+    }
+
     if (!validateForm()) {
       return
     }
@@ -336,8 +366,6 @@ export default function CheckoutForm({
 
           console.log("[Checkout] ✅ COD payment session initialized")
 
-          // Wait for backend to process
-          await new Promise((resolve) => setTimeout(resolve, 500))
         } catch (paymentError: any) {
           console.error(
             "[Checkout] Failed to initialize payment:",
@@ -382,29 +410,9 @@ export default function CheckoutForm({
             // Clear selected items from sessionStorage
             sessionStorage.removeItem("checkoutSelectedItems")
 
-            // If we used a checkout cart, delete the original cart items that were ordered
+            // If we used a checkout cart, clean up original cart items in background.
             if (selectedItemIds.length > 0) {
-              console.log(
-                "[Checkout] Removing ordered items from original cart..."
-              )
-
-              try {
-                const { deleteLineItem } = await import("@lib/data/cart")
-
-                for (const itemId of selectedItemIds) {
-                  await deleteLineItem(itemId)
-                }
-
-                console.log(
-                  "[Checkout] ✅ Ordered items removed from original cart"
-                )
-              } catch (cleanupError: any) {
-                console.warn(
-                  "[Checkout] ⚠️ Failed to clean up original cart:",
-                  cleanupError
-                )
-                // Continue - order is placed successfully
-              }
+              cleanupOriginalCartInBackground(cart.id, selectedItemIds)
             }
 
             // Redirect to success page

@@ -167,17 +167,22 @@ export function getColorHexForValue(
  * Check if a variant combination is available (in stock)
  */
 export function isVariantAvailable(
-  variant: HttpTypes.StoreProductVariant | undefined
+  variant: HttpTypes.StoreProductVariant | undefined,
+  inventoryMap?: Record<string, number>
 ): boolean {
   if (!variant) return false
 
-  // If not managing inventory, always available
-  if (!variant.manage_inventory) return true
+  // If we have inventory data from custom endpoint, use it
+  if (inventoryMap && variant.id in inventoryMap) {
+    const quantity = inventoryMap[variant.id]
+    return quantity > 0
+  }
 
-  // If backorders allowed, available
+  // Fallback to variant properties
+  if (!variant.manage_inventory) return true
   if (variant.allow_backorder) return true
 
-  // Check inventory
+  // Check inventory_quantity (may be null in Medusa v2)
   return (variant.inventory_quantity || 0) > 0
 }
 
@@ -212,7 +217,8 @@ export function isOptionValueAvailable(
   variants: HttpTypes.StoreProductVariant[] | undefined,
   optionId: string,
   value: string,
-  currentSelections: Record<string, string | undefined>
+  currentSelections: Record<string, string | undefined>,
+  inventoryMap?: Record<string, number>
 ): boolean {
   if (!variants) return false
 
@@ -243,6 +249,6 @@ export function isOptionValueAvailable(
     }
 
     // Check if variant is in stock
-    return isVariantAvailable(v)
+    return isVariantAvailable(v, inventoryMap)
   })
 }

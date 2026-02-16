@@ -27,7 +27,7 @@ export default function ProductPrice({
     <div className="flex flex-col gap-y-2">
       {/* Sale Badge */}
       {isOnSale && (
-        <span className="inline-flex items-center px-3 py-1 bg-[#F16D34] text-white text-xs font-bold uppercase tracking-wider w-fit">
+        <span className="inline-flex items-center px-3 py-1 bg-red-600 text-white text-xs font-bold uppercase tracking-wider w-fit">
           On Sale Price
         </span>
       )}
@@ -38,7 +38,7 @@ export default function ProductPrice({
         <span
           className={clx(
             "text-2xl md:text-3xl font-bold",
-            isOnSale ? "text-[#F16D34]" : "text-gray-900"
+            isOnSale ? "text-red-600" : "text-gray-900"
           )}
           data-testid="product-price"
           data-value={selectedPrice.calculated_price_number}

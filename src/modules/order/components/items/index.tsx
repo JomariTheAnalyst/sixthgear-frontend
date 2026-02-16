@@ -11,6 +11,11 @@ type ItemsProps = {
 const Items = ({ order }: ItemsProps) => {
   const items = order.items
 
+  console.log("=== ITEMS COMPONENT DEBUG ===")
+  console.log("Order ID:", order.id)
+  console.log("Items received:", items?.length || 0)
+  console.log("Items array:", JSON.stringify(items, null, 2))
+
   return (
     <div className="divide-y divide-gray-100" data-testid="products-table">
       {items?.length

@@ -4,11 +4,13 @@ import ImageGallery from "@modules/products/components/image-gallery"
 import ProductActions from "@modules/products/components/product-actions"
 import ProductOnboardingCta from "@modules/products/components/product-onboarding-cta"
 import ProductTabs from "@modules/products/components/product-tabs"
-import RelatedProducts from "@modules/products/components/related-products"
+import ProductReviews from "@modules/products/components/product-reviews"
+import YouMayLike from "@modules/products/components/you-may-like"
 import ProductInfo from "@modules/products/templates/product-info"
-import SkeletonRelatedProducts from "@modules/skeletons/templates/skeleton-related-products"
+import Breadcrumb from "@modules/products/components/breadcrumb"
 import { notFound } from "next/navigation"
 import { HttpTypes } from "@medusajs/types"
+import { getProductReviews } from "@lib/data/products"
 
 import ProductActionsWrapper from "./product-actions-wrapper"
 
@@ -19,7 +21,7 @@ type ProductTemplateProps = {
   images: HttpTypes.StoreProductImage[]
 }
 
-const ProductTemplate: React.FC<ProductTemplateProps> = ({
+const ProductTemplate: React.FC<ProductTemplateProps> = async ({
   product,
   region,
   countryCode,
@@ -29,29 +31,66 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
     return notFound()
   }
 
+  // Fetch reviews
+  const reviewData = await getProductReviews(product.id)
+
   return (
     <>
       {/* Main Product Section */}
       <div className="bg-white pt-28">
         <div
-          className="max-w-[1440px] mx-auto px-4 md:px-8 lg:px-12 py-8 lg:py-12"
+          className="max-w-[1440px] mx-auto px-4 md:px-8 lg:px-12 py-6 md:py-8 lg:py-12"
           data-testid="product-container"
         >
+          {/* Breadcrumb Navigation */}
+          <Breadcrumb product={product} />
+
           {/* Two Column Layout: Images Left, Info Right */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 lg:gap-12 mt-6">
             {/* Left Column - Product Images */}
             <div className="order-1">
-              <div className="sticky top-32">
+              <div className="lg:sticky lg:top-32">
                 <ImageGallery images={images} />
               </div>
             </div>
 
             {/* Right Column - Product Info & Actions */}
             <div className="order-2 flex flex-col gap-y-6">
-              {/* Product Info (Brand, Title) */}
-              <ProductInfo product={product} />
+              {/* Top Section: Title with Stock Badge on Right */}
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <h1
+                    className="text-2xl md:text-3xl lg:text-4xl font-black text-gray-900 leading-tight"
+                    data-testid="product-title"
+                    style={{ fontFamily: "BRHendrix, sans-serif" }}
+                  >
+                    {product.title}
+                  </h1>
+                </div>
 
-              {/* Product Actions (Price, Variants, Add to Cart) */}
+                {/* Stock Badge on Right */}
+                <span className="inline-block px-3 py-1.5 bg-gray-100 text-gray-600 text-sm font-medium rounded">
+                  In Stock
+                </span>
+              </div>
+
+              {/* Description */}
+              {product.description && (
+                <p className="text-sm md:text-base text-gray-600 leading-relaxed line-clamp-3">
+                  {product.description}
+                </p>
+              )}
+
+              {/* Star Rating with Review Count Link */}
+              <div className="flex items-center gap-2 pb-6 border-b border-gray-200">
+                <ProductInfo
+                  product={product}
+                  averageRating={reviewData?.average_rating}
+                  reviewCount={reviewData?.count}
+                />
+              </div>
+
+              {/* Variant Selection & Add to Cart */}
               <Suspense
                 fallback={
                   <ProductActions
@@ -64,59 +103,8 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
                 <ProductActionsWrapper id={product.id} region={region} />
               </Suspense>
 
-              {/* Trust Badges */}
-              <div className="border-t border-gray-200 pt-6">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <TrustBadge
-                    icon={
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                      </svg>
-                    }
-                    label="Fully Authentic"
-                  />
-                  <TrustBadge
-                    icon={
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
-                      </svg>
-                    }
-                    label="New & Unused"
-                  />
-                  <TrustBadge
-                    icon={
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                      </svg>
-                    }
-                    label="Easy Returns"
-                  />
-                  <TrustBadge
-                    icon={
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    }
-                    label="No Hidden Fees"
-                  />
-                </div>
-              </div>
-
-              {/* Product Description & Tabs (Accordions) */}
-              <div className="border-t border-gray-200 pt-6">
-                {/* Description Section */}
-                {product.description && (
-                  <div className="mb-6">
-                    <h3 className="text-sm font-bold uppercase tracking-wide text-gray-900 mb-4">
-                      Description
-                    </h3>
-                    <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
-                      {product.description}
-                    </p>
-                  </div>
-                )}
-
-                {/* Product Tabs (Details, Shipping, etc.) */}
+              {/* Collapsible Information Sections */}
+              <div className="mt-6">
                 <ProductTabs product={product} />
               </div>
 
@@ -124,35 +112,62 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
               <ProductOnboardingCta />
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Related Products Section */}
-      <div
-        className="bg-gray-50 py-16"
-        data-testid="related-products-container"
-      >
-        <div className="max-w-[1440px] mx-auto px-4 md:px-8 lg:px-12">
-          <h2
-            className="text-2xl md:text-3xl font-bold text-gray-900 uppercase mb-8"
-            style={{ fontFamily: "BRHendrix, sans-serif" }}
-          >
-            Perfectly Pair With
-          </h2>
-          <Suspense fallback={<SkeletonRelatedProducts />}>
-            <RelatedProducts product={product} countryCode={countryCode} />
-          </Suspense>
+          {/* Product Reviews Section */}
+          {reviewData && reviewData.count > 0 && (
+            <div className="mt-12 md:mt-16 border-t border-gray-200 pt-8 md:pt-12">
+              <ProductReviews
+                productId={product.id}
+                reviews={reviewData.reviews}
+                count={reviewData.count}
+                averageRating={reviewData.average_rating}
+              />
+            </div>
+          )}
+
+          {/* You May Like Section - Meilisearch Powered */}
+          <div className="mt-12 md:mt-16 border-t border-gray-200 pt-8 md:pt-12">
+            <Suspense
+              fallback={
+                <div className="animate-pulse">
+                  <div className="h-8 bg-gray-200 rounded w-48 mb-6"></div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                    {[...Array(6)].map((_, i) => (
+                      <div
+                        key={i}
+                        className="bg-gray-200 aspect-square rounded"
+                      ></div>
+                    ))}
+                  </div>
+                </div>
+              }
+            >
+              <YouMayLike
+                productId={product.id}
+                countryCode={countryCode}
+                region={region}
+              />
+            </Suspense>
+          </div>
         </div>
       </div>
     </>
   )
 }
 
-// Trust Badge Component
-const TrustBadge = ({ icon, label }: { icon: React.ReactNode; label: string }) => (
-  <div className="flex flex-col items-center text-center gap-2">
-    <div className="text-gray-400">{icon}</div>
-    <span className="text-xs font-semibold uppercase tracking-wide text-gray-600">
+// Trust Badge Component - Enhanced
+const TrustBadge = ({
+  icon,
+  label,
+}: {
+  icon: React.ReactNode
+  label: string
+}) => (
+  <div className="flex flex-col items-center text-center gap-1.5 md:gap-2 p-2 rounded-lg hover:bg-gray-50 transition-colors">
+    <div className="text-gray-400 hover:text-[#F16D34] transition-colors">
+      {icon}
+    </div>
+    <span className="text-[10px] md:text-xs font-semibold uppercase tracking-wide text-gray-600 leading-tight">
       {label}
     </span>
   </div>

@@ -10,6 +10,7 @@ type GenericOptionSelectorProps = {
   updateOption: (optionId: string, value: string) => void
   currentSelections: Record<string, string | undefined>
   disabled?: boolean
+  inventoryMap?: Record<string, number>
 }
 
 export default function GenericOptionSelector({
@@ -19,6 +20,7 @@ export default function GenericOptionSelector({
   updateOption,
   currentSelections,
   disabled,
+  inventoryMap,
 }: GenericOptionSelectorProps) {
   const optionValues = (option.values ?? []).map((v) => v.value)
 
@@ -41,7 +43,8 @@ export default function GenericOptionSelector({
             variants,
             option.id,
             value,
-            currentSelections
+            currentSelections,
+            inventoryMap
           )
 
           return (

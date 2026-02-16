@@ -18,6 +18,13 @@ type Params = {
     page?: string
     tag?: string
     category?: string
+    query?: string
+    categories?: string
+    brands?: string
+    tags?: string
+    minPrice?: string
+    maxPrice?: string
+    sort?: string
   }>
   params: Promise<{
     countryCode: string
@@ -27,7 +34,29 @@ type Params = {
 export default async function StorePage(props: Params) {
   const params = await props.params
   const searchParams = await props.searchParams
-  const { sortBy, page, tag, category } = searchParams
+  const {
+    sortBy,
+    page,
+    tag,
+    category,
+    query,
+    categories,
+    brands,
+    tags,
+    minPrice,
+    maxPrice,
+    sort,
+  } = searchParams
+
+  // Check if Meilisearch filters are active
+  const hasFilters = !!(
+    categories ||
+    brands ||
+    tags ||
+    minPrice ||
+    maxPrice ||
+    sort
+  )
 
   return (
     <StoreTemplate
@@ -36,6 +65,8 @@ export default async function StorePage(props: Params) {
       countryCode={params.countryCode}
       tagValue={tag}
       categoryHandle={category}
+      searchQuery={query}
+      hasFilters={hasFilters}
     />
   )
 }
